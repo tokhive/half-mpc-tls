@@ -31,6 +31,8 @@ pub const TLS_1_3: &str = "1.3";
 pub const FEATURE_TLS13_KEY_UPDATE: &str = "tls13-keyupdate";
 /// Hub garbling with masked and MAC-authenticated outputs.
 pub const FEATURE_AUTHENTICATED_MPC_OUTPUT: &str = "authenticated-mpc-output";
+/// Shared keyed HMAC prefix states and MPC schedule revision 2.
+pub const FEATURE_TLS13_KEYED_HMAC_STATE: &str = "tls13-keyed-hmac-state";
 /// Required feature for one-way server traffic key release.
 pub const FEATURE_SERVER_KEY_RELEASE: &str = "server-key-release";
 /// Required feature for request-direction selective encryption.
@@ -109,9 +111,11 @@ impl EngineMode {
             Self::Tls12SelectiveMpc => {
                 features.extend([FEATURE_PUBLIC_REQUEST_BODY, FEATURE_PRECOMPUTED_CLIENT_AES])
             }
-            Self::Tls13SelectiveMpc => {
-                features.extend([FEATURE_TLS13_KEY_UPDATE, FEATURE_AUTHENTICATED_MPC_OUTPUT])
-            }
+            Self::Tls13SelectiveMpc => features.extend([
+                FEATURE_TLS13_KEY_UPDATE,
+                FEATURE_AUTHENTICATED_MPC_OUTPUT,
+                FEATURE_TLS13_KEYED_HMAC_STATE,
+            ]),
         }
         features
     }
@@ -375,6 +379,35 @@ mod tests {
     use super::*;
 
     #[test]
+    fn compatible_v1_releases_allow_optional_features_without_accepting_unknown_protocols() {
+        for tls13 in [false, true] {
+            for upgraded in [Role::Hub, Role::Provider] {
+                let (mut hub, mut provider) = if tls13 {
+                    (
+                        Capabilities::tls13_with_capacity(Role::Hub, MpcCapacity::large()),
+                        Capabilities::tls13_with_capacity(Role::Provider, MpcCapacity::large()),
+                    )
+                } else {
+                    (
+                        Capabilities::selective_mpc(Role::Hub),
+                        Capabilities::selective_mpc(Role::Provider),
+                    )
+                };
+                match upgraded {
+                    Role::Hub => hub.features.push("optional-warm-stage-metrics".into()),
+                    Role::Provider => provider.features.push("optional-warm-stage-metrics".into()),
+                }
+                assert!(negotiate(&hub, &provider).is_ok());
+                provider.protocol_version += 1;
+                assert_eq!(
+                    negotiate(&hub, &provider),
+                    Err(NegotiationError::ProtocolVersion)
+                );
+            }
+        }
+    }
+
+    #[test]
     fn fixture_matches_wire_contract() {
         let fixture = include_str!("../../../../testdata/sidecar-capabilities.json");
         let parsed: Capabilities = serde_json::from_str(fixture).unwrap();
@@ -495,6 +528,7 @@ mod tls13_tests {
         for feature in [
             FEATURE_TLS13_KEY_UPDATE,
             FEATURE_AUTHENTICATED_MPC_OUTPUT,
+            FEATURE_TLS13_KEYED_HMAC_STATE,
             FEATURE_PROVIDER_DELIVERY_ACK,
         ] {
             let mut peer = provider.clone();

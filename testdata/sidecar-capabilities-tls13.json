@@ -15,7 +15,8 @@
     "authenticated-response-channel",
     "provider-delivery-ack",
     "tls13-keyupdate",
-    "authenticated-mpc-output"
+    "authenticated-mpc-output",
+    "tls13-keyed-hmac-state"
   ],
   "mpc_capacity": {
     "max_request_bytes": 4096,

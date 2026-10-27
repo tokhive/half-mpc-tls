@@ -321,7 +321,8 @@ func decodeCompletion(raw []byte, task string) (*Completion, error) {
 }
 
 // TaskStatus describes durable settlement state, not a cached model response.
-// Pending means the outcome remains unresolved; do not resubmit under a new key.
+// Pending or review_required means the outcome remains unresolved; do not
+// resubmit under a new key. Review retains the reserve for manual reconciliation.
 type TaskStatus struct {
 	TaskID         string `json:"task_id"`
 	State          string `json:"state"`
@@ -332,6 +333,7 @@ type TaskStatus struct {
 	RefundMicros   int64  `json:"refund_micros"`
 	InputTokens    int64  `json:"input_tokens"`
 	OutputTokens   int64  `json:"output_tokens"`
+	ReviewReason   string `json:"review_reason,omitempty"`
 }
 
 func (c *Client) Task(ctx context.Context, taskID string) (*TaskStatus, error) {

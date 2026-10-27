@@ -138,8 +138,8 @@ pub struct WarmPrefix {
     used: bool,
 }
 impl WarmPrefix {
-    pub fn new(vm: &mut dyn Vm<Binary>, secret: schedule::Secret) -> Result<Self> {
-        let (key, iv) = schedule::key_iv(vm, secret)?;
+    pub fn new(vm: &mut dyn Vm<Binary>, mac: &schedule::KeyedHmac) -> Result<Self> {
+        let (key, iv) = mac.key_iv(vm)?;
         let ks: Array<U8, 176> = vm.call(Call::builder(AES128_KS.clone()).arg(key).build()?)?;
         let zero = schedule::public(vm, &[0; 16])?;
         let h = vm.call(
@@ -182,6 +182,7 @@ impl WarmPrefix {
         credential: Option<&[u8]>,
         span: std::ops::Range<usize>,
     ) -> Result<Option<(Vec<u8>, Vec<u8>)>> {
+        let _phase = crate::diagnostics::Phase::new(party.provider, "tls13_credential_encryption");
         if std::mem::replace(&mut self.used, true)
             || public.is_empty()
             || public.len() + 1 > PREFIX_CAPACITY
@@ -271,6 +272,7 @@ impl WarmPrefix {
         let mask0 = mask0.receive().await?;
         let mask1 = mask1.receive().await?;
         if party.provider {
+            _phase.finish();
             return Ok(None);
         }
         let update = update.ok_or_else(|| fail("missing Hub output"))?;
@@ -286,6 +288,7 @@ impl WarmPrefix {
         let h = block(h)?;
         let mask0 = block(mask0)?;
         let mask1 = block(mask1)?;
+        _phase.finish();
         Ok(Some((
             finish_record(&h, &mask0, &cipher)?,
             finish_record(&h, &mask1, &update)?,

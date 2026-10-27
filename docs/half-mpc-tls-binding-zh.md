@@ -2,6 +2,8 @@
 
 > 一种协议，用于证明 LLM API 中继节点（Provider）确实将请求转发给了声称的上游 API（如 OpenAI），并返回了真实的响应——无需 TEE 硬件，也不会暴露 Provider 的 API 密钥。
 
+> 当前安全模型（2026-10-27 确认）：信任 Hub 遵守协议并正确执行验证与结算，Provider 可以恶意，上游 API 及其证书信任链可信。凭证隐私以 Hub 遵守协议为前提，不承诺抵抗主动恶意或已被攻陷的 Hub；Consumer 信任 Hub，不独立验证 TLS 证据。本文部分性能与连接复用描述属于原始设计，当前实现状态以 [README](../README.md) 为准。
+
 ## 目录
 
 - [1. 概述](#1-概述)
@@ -50,7 +52,7 @@
 | 特性 | 保证 |
 |---|---|
 | **响应真实性** | Hub 可以独立验证响应确实来自上游 API（如 api.openai.com） |
-| **API 密钥隐私** | Hub 永远不会知道 Provider 的 API 密钥 |
+| **API 密钥隐私** | 在 Hub 遵守协议的前提下，不向 Hub 暴露 Provider 的 API 密钥明文 |
 | **IP 地址保留** | 上游 API 看到的是 Provider 的 IP 地址，而非 Hub 的 |
 | **无需特殊硬件** | 任一方都不需要 TEE（Intel TDX、AWS Nitro 等） |
 | **低延迟开销** | 每次请求约 2ms 的 MPC 加密开销；响应解密 0ms 开销 |
@@ -87,7 +89,7 @@ Half-MPC TLS 绑定同时解决了以上四个局限性。
 
 ### 可信方
 
-- **Hub**：由平台运营。被信任不会向 Consumer 伪造虚假响应（其声誉依赖于响应质量）。可能对 Provider 的 API 密钥感到好奇。
+- **Hub**：由平台运营，被信任遵守协议、正确验证请求和响应并执行结算。可能对 Provider 的 API 密钥感到好奇，但不会主动修改 MPC 输入、电路、记录或密钥释放流程来获取凭证；主动恶意或被攻陷的 Hub 不在当前威胁模型内。
 - **上游 API**（如 OpenAI）：被信任对合法请求返回诚实的响应。
 
 ### 不可信方
@@ -102,7 +104,7 @@ Half-MPC TLS 绑定同时解决了以上四个局限性。
 
 | 资产 | 保护目标 |
 |---|---|
-| Provider 的 API 密钥 | Hub 不能获知 |
+| Provider 的 API 密钥 | 在 Hub 遵守协议的前提下，不向 Hub 暴露明文 |
 | Consumer 的 prompt | Provider 会看到（推理中继的固有特性；prompt 隐私需要额外的 Hub 侧 TEE） |
 | 响应完整性 | Hub 必须能验证响应是真实且未被修改的 |
 | Provider 的 IP 身份 | 上游 API 必须看到 Provider 的 IP，而非 Hub 的，以避免封号 |

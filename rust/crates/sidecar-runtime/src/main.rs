@@ -13,13 +13,17 @@ struct Config {
 }
 
 fn parse_args() -> Result<Config, &'static str> {
-    let mut arguments = env::args_os();
-    let _program = arguments.next();
+    parse_args_from(env::args_os().skip(1))
+}
+
+fn parse_args_from(
+    mut arguments: impl Iterator<Item = std::ffi::OsString>,
+) -> Result<Config, &'static str> {
     let mut role = None;
     let mut socket = None;
     let mut credential_file = None;
     let mut upstream_ca = None;
-    let mut capacity = MpcCapacity::baseline();
+    let mut capacity = None;
     let mut tls13 = false;
     while let Some(argument) = arguments.next() {
         match argument.to_str() {
@@ -61,10 +65,12 @@ fn parse_args() -> Result<Config, &'static str> {
             }
             Some("--capacity") => {
                 let value = arguments.next().ok_or("--capacity requires a value")?;
-                capacity = value
-                    .to_str()
-                    .and_then(MpcCapacity::from_profile)
-                    .ok_or("--capacity must be baseline, 16k, 64k, 256k, 1m or 5m")?;
+                capacity = Some(
+                    value
+                        .to_str()
+                        .and_then(MpcCapacity::from_profile)
+                        .ok_or("--capacity must be baseline, 16k, 64k, 256k, 1m or 5m")?,
+                );
             }
             Some("--help") | Some("-h") => {
                 return Err(
@@ -83,7 +89,13 @@ fn parse_args() -> Result<Config, &'static str> {
         socket: socket.ok_or("--socket is required")?,
         credential_file,
         upstream_ca,
-        capacity,
+        capacity: capacity.unwrap_or_else(|| {
+            if tls13 {
+                MpcCapacity::large()
+            } else {
+                MpcCapacity::baseline()
+            }
+        }),
         tls13,
     })
 }
@@ -172,4 +184,29 @@ async fn shutdown_signal(
 
 fn io_error(message: &'static str) -> ServiceError {
     std::io::Error::new(std::io::ErrorKind::InvalidInput, message).into()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn tls13_uses_one_shared_profile_and_preserves_explicit_legacy_capacity() {
+        for (flags, expected) in [
+            (vec![], MpcCapacity::baseline()),
+            (vec!["--tls-version", "1.3"], MpcCapacity::large()),
+            (
+                vec!["--capacity", "baseline", "--tls-version", "1.3"],
+                MpcCapacity::baseline(),
+            ),
+            (
+                vec!["--tls-version", "1.3", "--capacity", "16k"],
+                MpcCapacity::from_profile("16k").unwrap(),
+            ),
+        ] {
+            let args = [vec!["--role", "hub", "--socket", "/tmp/unused.sock"], flags].concat();
+            let config = parse_args_from(args.into_iter().map(std::ffi::OsString::from)).unwrap();
+            assert_eq!(config.capacity, expected);
+        }
+    }
 }

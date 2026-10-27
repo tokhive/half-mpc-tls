@@ -300,6 +300,18 @@ impl Handshakes {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn public_clienthello_matches_fingerprint_fixture() {
+        let bytes =
+            plaintext_record(&client_hello("example.com", &[4; 65], [1; 32], [2; 32]).unwrap())
+                .unwrap();
+        let encoded: String = bytes.iter().map(|b| format!("{b:02x}")).collect();
+        assert_eq!(
+            encoded,
+            include_str!("../../../../testdata/tls13-clienthello-v1.hex").trim()
+        );
+    }
     fn hello(version: &[u8], extra: Vec<u8>) -> Vec<u8> {
         let key = p256::SecretKey::from_slice(&[7; 32]).unwrap().public_key();
         let point = p256::EncodedPoint::from(key);

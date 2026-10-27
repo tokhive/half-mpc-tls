@@ -14,6 +14,7 @@ import (
 	"testing"
 	"time"
 
+	"tokenhive.local/half-mpc-tls/internal/gateway"
 	"tokenhive.local/half-mpc-tls/internal/precompute"
 	"tokenhive.local/half-mpc-tls/internal/providerhealth"
 	"tokenhive.local/half-mpc-tls/internal/response"
@@ -121,6 +122,28 @@ func TestExecuteClosesAuthenticatedSettlementLoop(t *testing.T) {
 	}
 	if snapshot := health.Snapshot("provider-1"); snapshot.Successes != 1 || snapshot.Failures != 0 {
 		t.Fatalf("unexpected health: %+v", snapshot)
+	}
+}
+
+func TestExecuteOverBudgetReceiptRetainsReserveWithoutProviderPenalty(t *testing.T) {
+	body := `{"id":"chatcmpl-1","model":"gpt-5","choices":[],"usage":{"prompt_tokens":101,"completion_tokens":2,"total_tokens":103}}`
+	raw := fmt.Sprintf("HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: %d\r\n\r\n%s", len(body), body)
+	c, ledger, health, cleanup := setupCoordinator(t, raw, false)
+	defer cleanup()
+	recorder := httptest.NewRecorder()
+	err := c.Execute(context.Background(), recorder, "consumer-1", "over-budget", []byte(`{"model":"gpt-5","messages":[]}`))
+	if !errors.Is(err, gateway.ErrReceiptCommit) || recorder.Body.Len() != 0 {
+		t.Fatalf("exceptional settlement exposed successful JSON: body=%q err=%v", recorder.Body.String(), err)
+	}
+	status, ok, err := ledger.Task("consumer-1", "over-budget")
+	if err != nil || !ok || status.State != settlement.ReservationReviewRequired || status.RefundMicros != 0 || status.ChargeMicros != 0 {
+		t.Fatalf("exceptional task state: %+v %v", status, err)
+	}
+	if _, exists, _ := ledger.Task("other-consumer", "over-budget"); exists {
+		t.Fatal("review evidence leaked across consumers")
+	}
+	if snapshot := health.Snapshot("provider-1"); snapshot.Failures != 0 || snapshot.Successes != 0 {
+		t.Fatalf("accounting exception affected Provider health: %+v", snapshot)
 	}
 }
 

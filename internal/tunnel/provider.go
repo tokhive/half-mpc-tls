@@ -42,11 +42,16 @@ func (p *Provider) Serve(ctx context.Context, control net.Conn) error {
 	}
 	p.codec = protocol.NewCodec(control, control)
 	p.sessions = make(map[uint64]*providerSession)
-	defer p.closeAll()
-
-	go func() {
-		<-ctx.Done()
+	ctx, cancel := context.WithCancel(ctx)
+	stop := context.AfterFunc(ctx, func() { _ = control.Close() })
+	var opening sync.WaitGroup
+	defer func() {
+		cancel()
+		stop()
 		_ = control.Close()
+		// A pending dial must not install a session after closeAll has run.
+		opening.Wait()
+		p.closeAll()
 	}()
 
 	for {
@@ -59,7 +64,11 @@ func (p *Provider) Serve(ctx context.Context, control net.Conn) error {
 		}
 		switch frame.Type {
 		case protocol.FrameOpen:
-			go p.open(ctx, frame.SessionID, frame.Payload)
+			opening.Add(1)
+			go func() {
+				defer opening.Done()
+				p.open(ctx, frame.SessionID, frame.Payload)
+			}()
 		case protocol.FrameData:
 			if len(frame.Payload) == 0 || len(frame.Payload) > protocol.MaxDataFrameSize {
 				return fmt.Errorf("invalid data frame size %d", len(frame.Payload))

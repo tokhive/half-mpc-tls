@@ -1,7 +1,7 @@
 # TokenHive TLS 1.2 Selective MPC 实现设计
 
 性能调整的实现、容量档位与验证结果见 [performance-design-zh.md](performance-design-zh.md)。
-生产路径仍为 TLS 1.2；TLS 1.3 KeyUpdate 目前是独立的本地兼容性原型。
+TLS 1.2 仍是兼容性默认；TLS 1.3 已接入共享 sidecar 和 Go 路由，必须显式选择。本文聚焦 TLS 1.2，当前总体架构以 [current-architecture.md](current-architecture.md) 为准。
 
 ## 1. 目标和信任模型
 

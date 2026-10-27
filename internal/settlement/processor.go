@@ -14,6 +14,7 @@ var ErrInvalidProcessor = errors.New("invalid settlement processor")
 // transactional database adapter.
 type ReceiptLedger interface {
 	Settle(gateway.Receipt) (Settlement, bool, error)
+	HoldForReview(gateway.Receipt) (bool, error)
 }
 
 // Processor is the production ReceiptSink ordering boundary: evidence reaches
@@ -42,8 +43,13 @@ func (p *Processor) RecordReceipt(receipt gateway.Receipt) error {
 	if _, _, err := p.journal.Append(receipt); err != nil {
 		return fmt.Errorf("persist receipt: %w", err)
 	}
-	if _, _, err := p.ledger.Settle(receipt); err != nil {
-		return fmt.Errorf("apply receipt to ledger: %w", err)
+	review, err := p.applyReceipt(receipt)
+	if err != nil {
+		return err
+	}
+	if review {
+		// The evidence is safe, but callers must not expose successful completion.
+		return ErrUsageExceedsReservation
 	}
 	return nil
 }
@@ -57,9 +63,25 @@ func (p *Processor) ReplayPending() error {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	for _, record := range p.journal.Records() {
-		if _, _, err := p.ledger.Settle(record.Receipt); err != nil {
+		if _, err := p.applyReceipt(record.Receipt); err != nil {
 			return fmt.Errorf("replay settlement task %s: %w", record.Receipt.TaskID, err)
 		}
 	}
 	return nil
+}
+
+// Only a durably held over-budget task is recoverable independently of other
+// tasks. Storage failures, missing reservations and binding conflicts still stop
+// recovery; they must never be mistaken for a successfully isolated receipt.
+func (p *Processor) applyReceipt(receipt gateway.Receipt) (bool, error) {
+	if _, _, err := p.ledger.Settle(receipt); err != nil {
+		if !errors.Is(err, ErrUsageExceedsReservation) {
+			return false, fmt.Errorf("apply receipt to ledger: %w", err)
+		}
+		if _, err := p.ledger.HoldForReview(receipt); err != nil {
+			return false, fmt.Errorf("hold receipt for review: %w", err)
+		}
+		return true, nil
+	}
+	return false, nil
 }

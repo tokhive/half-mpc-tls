@@ -7,6 +7,7 @@ rust-version.workspace = true
 
 [dependencies]
 aes-gcm.workspace = true
+cpu-time = "=1.0.0"
 futures.workspace = true
 ghash = "0.5"
 hmac = "0.12"
@@ -24,6 +25,7 @@ mpz-vm-core.workspace = true
 p256.workspace = true
 rand.workspace = true
 serde.workspace = true
+serde_json.workspace = true
 rustls-webpki = {workspace = true, features = ["ring"]}
 rustls-pki-types.workspace = true
 subtle = "2"
@@ -37,6 +39,7 @@ tokio-util = { workspace = true, features = ["compat"] }
 zeroize.workspace = true
 
 [dev-dependencies]
+tlsn-core = { workspace = true, features = ["mozilla-certs"] }
 mpz-ot-core.workspace = true
 serde_json.workspace = true
 mpz-common = {workspace = true, features = ["test-utils"]}

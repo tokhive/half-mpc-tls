@@ -20,6 +20,7 @@ import time
 import urllib.request
 
 from demo import ROOT, certificates, free_port, private_json
+from host_resources import proc_stats, available_mib, host_metadata
 
 
 class Fixture(http.server.BaseHTTPRequestHandler):
@@ -184,25 +185,11 @@ class DelayProxy:
         self.thread.join(5)
 
 
-def proc_stats(pid):
-    try:
-        fields = Path(f'/proc/{pid}/stat').read_text().split(') ', 1)[1].split()
-        return {'cpu_seconds': (int(fields[11])+int(fields[12]))/os.sysconf('SC_CLK_TCK'),
-                'rss_mib': int(fields[21])*os.sysconf('SC_PAGE_SIZE')/(1 << 20),
-                'threads': int(fields[17]), 'fds': len(list(Path(f'/proc/{pid}/fd').iterdir()))}
-    except (OSError, ValueError, IndexError):
-        return {'cpu_seconds': 0, 'rss_mib': 0}
-
-
-def available_mib():
-    fields = dict(line.split(':', 1) for line in Path('/proc/meminfo').read_text().splitlines())
-    return int(fields['MemAvailable'].split()[0])/1024
-
-
 class Deployment:
-    def __init__(self, parent, name, capacity='baseline', delay_ms=0, max_waiters=64, queue_wait_timeout_ms=10000):
+    def __init__(self, parent, name, capacity='baseline', delay_ms=0, max_waiters=64, queue_wait_timeout_ms=10000, tls_version='1.3'):
         self.directory = Path(tempfile.mkdtemp(prefix=name+'-', dir=parent))
         self.capacity = capacity
+        self.tls_version = tls_version
         self.delay_ms = delay_ms
         self.max_waiters = max_waiters
         self.queue_wait_timeout_ms = queue_wait_timeout_ms
@@ -227,7 +214,7 @@ class Deployment:
         self.handler = type('DeploymentFixture', (Fixture,), {'credential': self.credential, 'seen': 0, 'lock': threading.Lock()})
         self.upstream = TLSServer(('127.0.0.1', 0), self.handler)
         tls = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
-        tls.minimum_version = tls.maximum_version = ssl.TLSVersion.TLSv1_3
+        tls.minimum_version = tls.maximum_version = (ssl.TLSVersion.TLSv1_3 if self.tls_version == '1.3' else ssl.TLSVersion.TLSv1_2)
         tls.set_ecdh_curve('prime256v1')
         tls.load_cert_chain(d/'server.pem', d/'server.key')
         self.upstream.tls = tls
@@ -246,7 +233,7 @@ class Deployment:
         capacities = {p['name']: p['capacity'] for p in json.loads((ROOT/'testdata/mpc-capacities.json').read_text())}
         cfg['routes'][0].update(credential_id='demo', credential_length=len(self.credential), host='localhost',
                                server_name='localhost', port=upstream_port, models=['demo-model'],
-                               allowed_response_models=['demo-model'], tls_version='1.3', capacity=capacities[self.capacity])
+                               allowed_response_models=['demo-model'], tls_version=self.tls_version, capacity=capacities[self.capacity])
         cfg['fundings'][0]['amount_micros'] = 100000000
         private_json(d/'hub.json', cfg)
         provider_data = data
@@ -264,7 +251,7 @@ class Deployment:
         private_json(d/'client.json', {'base_url': self.api_url+'/v1', 'api_key': self.token, 'ca_file': str(d/'ca.pem')})
         private_json(d/'direct.json', {'base_url': f'https://localhost:{upstream_port}/v1', 'api_key': self.credential, 'ca_file': str(d/'ca.pem')})
         sidecar = ROOT/'rust/target/release/tokenhive-sidecar'
-        flags = ['--tls-version', '1.3', '--capacity', self.capacity, '--upstream-ca', d/'ca.pem']
+        flags = ['--tls-version', self.tls_version, '--capacity', self.capacity, '--upstream-ca', d/'ca.pem']
         self.launch('hub-sidecar', [sidecar, '--role', 'hub', '--socket', d/'hub.sock', *flags])
         self.launch('provider-sidecar', [sidecar, '--role', 'provider', '--socket', d/'provider.sock', *flags,
                                          '--credential-file', d/'credentials.json'])
@@ -430,9 +417,7 @@ def main():
     for binary in ('bin/tokenhive-hub', 'bin/tokenhive-provider-agent', 'bin/tokenhive-loadtest', 'rust/target/release/tokenhive-sidecar'):
         if not (ROOT/binary).exists():
             parser.error(f'missing {binary}; build first')
-    meta = {'created_utc': time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime()), 'cpu_count': len(os.sched_getaffinity(0)),
-            'cpu_model': next((line.split(':', 1)[1].strip() for line in Path('/proc/cpuinfo').read_text().splitlines() if line.startswith('model name')), 'unknown'),
-            'mem_total_kib': int(next(line.split()[1] for line in Path('/proc/meminfo').read_text().splitlines() if line.startswith('MemTotal:'))),
+    meta = {'created_utc': time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime()), **host_metadata(),
             'platform': platform.platform(), 'python': platform.python_version(), 'seconds': args.seconds,
             'fixture': {'first_response_delay_ms': 200, 'content_events': 40, 'event_interval_ms': 20, 'json_content_bytes': 2560},
             'config': {'target_ready': 2, 'max_ready': 4, 'warm_concurrency': 2, 'global_warm_concurrency': 2, 'data_tunnels': 16,

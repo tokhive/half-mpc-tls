@@ -1535,6 +1535,7 @@ async fn run_hub_handshake(
     root_store: RootCertStore,
     limits: MpcLimits,
 ) -> Result<HubEngine, EngineError> {
+    let _phase = tokenhive_tls13::diagnostics::Phase::new(false, "tls12_handshake");
     let mut session = TlsnSession::new(mpc_channel.compat());
     let verifier = session
         .new_verifier(
@@ -1558,10 +1559,12 @@ async fn run_hub_handshake(
         let _ = verifier.reject(None).await;
         return Err(EngineError::ConfigMismatch);
     }
+    let phase = tokenhive_tls13::diagnostics::Phase::new(false, "tls12_preprocessing");
     let mut verifier = verifier
         .accept()
         .await
         .map_err(|error| tlsn_stage_error("verifier_preprocessing", error))?;
+    phase.finish();
     let selective = verifier.selective_control();
     let server_records = verifier
         .take_server_records()
@@ -1573,10 +1576,12 @@ async fn run_hub_handshake(
     let verifier_task = AbortTask(tokio::spawn(async move {
         let _ = verifier.run().await;
     }));
+    let phase = tokenhive_tls13::diagnostics::Phase::new(false, "tls12_upstream_authentication");
     let mut release = authentication
         .wait()
         .await
         .map_err(|_| EngineError::Tlsn("upstream authentication"))?;
+    phase.finish();
     let keys = release
         .try_take()
         .map_err(|_| EngineError::Tlsn("server key release"))?
@@ -1586,6 +1591,7 @@ async fn run_hub_handshake(
         let _ = pump_authenticated_response(server_records, keys, response_channel).await;
     }));
 
+    _phase.finish();
     Ok(HubEngine {
         response_task,
         selective,
@@ -1601,6 +1607,7 @@ async fn run_provider_handshake(
     root_store: RootCertStore,
     limits: MpcLimits,
 ) -> Result<ProviderEngine, EngineError> {
+    let _phase = tokenhive_tls13::diagnostics::Phase::new(true, "tls12_handshake");
     let upstream_delivery = Arc::clone(&upstream_channel.delivery);
     let mut session = TlsnSession::new(mpc_channel.compat());
     let prover = session
@@ -1612,10 +1619,12 @@ async fn run_provider_handshake(
         .map_err(|_| EngineError::Tlsn("prover creation"))?;
     let (driver, handle) = session.split();
     let session_runtime = spawn_session_driver(driver, handle);
+    let phase = tokenhive_tls13::diagnostics::Phase::new(true, "tls12_preprocessing");
     let prover = prover
         .commit(mpc_config(&limits)?)
         .await
         .map_err(|error| tlsn_stage_error("prover_preprocessing", error))?;
+    phase.finish();
     let expected_server = server_name(&policy)?;
     let (tls_connection, prover) = prover
         .connect(
@@ -1636,6 +1645,7 @@ async fn run_provider_handshake(
         let _ = prover.into_future().await;
     }));
 
+    _phase.finish();
     Ok(ProviderEngine {
         tls_connection,
         selective,

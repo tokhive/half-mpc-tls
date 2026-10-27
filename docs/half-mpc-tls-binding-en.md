@@ -2,6 +2,8 @@
 
 > A protocol for proving that an LLM API relay (Provider) actually forwarded requests to the claimed upstream API (e.g., OpenAI) and returned genuine responses — without requiring TEE hardware, and without exposing the Provider's API key.
 
+> Current security model (confirmed 2026-10-27): Hub is trusted to follow the protocol and perform verification and settlement correctly. Provider may be malicious; the upstream API and its certificate trust chain are trusted. Credential privacy assumes a protocol-following Hub and does not cover an actively malicious or compromised Hub. Consumers trust Hub rather than independently verifying TLS evidence. Some performance and connection-reuse descriptions below reflect the original design; see [README](../README.md) for current implementation status.
+
 ## Table of Contents
 
 - [1. Overview](#1-overview)
@@ -50,7 +52,7 @@ The "Half-MPC" name reflects the key architectural insight: **MPC (Multi-Party C
 | Property | Guarantee |
 |---|---|
 | **Response authenticity** | Hub can independently verify that responses came from the upstream API (e.g., api.openai.com) |
-| **API key privacy** | Hub never learns the Provider's API key |
+| **API key privacy** | The protocol does not reveal the Provider's plaintext API key to a protocol-following Hub |
 | **IP preservation** | The upstream API sees the Provider's IP address, not the Hub's |
 | **No special hardware** | No TEE (Intel TDX, AWS Nitro, etc.) required on either side |
 | **Low latency overhead** | ~2ms per request for MPC encryption; 0ms for response decryption |
@@ -87,7 +89,7 @@ Half-MPC TLS Binding addresses all four limitations simultaneously.
 
 ### Trusted Parties
 
-- **Hub**: Operated by the platform. Trusted not to fabricate fake responses to Consumers (its reputation depends on response quality). May be curious about Provider's API key.
+- **Hub**: Operated by the platform and trusted to follow the protocol, verify requests and responses, and perform settlement correctly. It may be curious about Provider's API key but does not actively modify MPC inputs, circuits, records, or key-release steps to obtain credentials. An actively malicious or compromised Hub is outside the current threat model.
 - **Upstream API** (e.g., OpenAI): Trusted to return honest responses for valid requests.
 
 ### Untrusted Parties
@@ -102,7 +104,7 @@ Half-MPC TLS Binding addresses all four limitations simultaneously.
 
 | Asset | Protection goal |
 |---|---|
-| Provider's API key | Hub must not learn it |
+| Provider's API key | Do not reveal its plaintext to a protocol-following Hub |
 | Consumer's prompt | Provider sees it (inherent to inference relay; prompt privacy requires additional TEE on Hub side) |
 | Response integrity | Hub must verify responses are genuine and unmodified |
 | Provider's IP identity | Upstream API must see Provider's IP, not Hub's, to avoid account bans |

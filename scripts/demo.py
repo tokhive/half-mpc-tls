@@ -104,9 +104,11 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--check', action='store_true')
     parser.add_argument('--tls-version', choices=('1.2', '1.3'), default='1.2')
-    parser.add_argument('--capacity', choices=('baseline', '16k', '64k', '256k', '1m', '5m'), default='baseline')
+    parser.add_argument('--capacity', choices=('baseline', '16k', '64k', '256k', '1m', '5m'),
+                        help='default: baseline for TLS 1.2; shared 5m profile for TLS 1.3')
     parser.add_argument('--prompt-bytes', type=int, default=5)
     args = parser.parse_args()
+    args.capacity = args.capacity or ('5m' if args.tls_version == '1.3' else 'baseline')
     capacities = {p['name']: p['capacity'] for p in json.loads((ROOT/'testdata/mpc-capacities.json').read_text())}
     if not 1 <= args.prompt_bytes <= capacities[args.capacity]['max_request_bytes'] - 1024:
         parser.error('prompt must be positive and leave at least 1024 bytes for headers and JSON')

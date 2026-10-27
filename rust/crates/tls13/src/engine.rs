@@ -58,6 +58,26 @@ enum Control {
     },
     Switched,
     Delivered,
+    // Keep legacy indices 0..=6. Bincode 1 accepts trailing bytes, so changing
+    // variant 0's fields cannot reliably reject an old decoder.
+    InitV2 {
+        policy: Policy,
+        schedule: u16,
+    },
+}
+
+// MPC allocation/round ordering is separate from the outer sidecar RPC version.
+// Old and new schedules must fail before any credential can be contributed.
+const MPC_SCHEDULE: u16 = 2;
+
+fn validate_init(init: Control, policy: &Policy) -> Result<()> {
+    match init {
+        Control::InitV2 {
+            policy: expected,
+            schedule,
+        } if expected == *policy && schedule == MPC_SCHEDULE => Ok(()),
+        _ => Err(fail("peer policy or MPC schedule mismatch")),
+    }
 }
 #[derive(Serialize, Deserialize)]
 enum WireCommand {
@@ -221,10 +241,18 @@ pub async fn hub_handshake(
     roots: RootCertStore,
     policy: Policy,
 ) -> Result<Hub> {
+    let _phase = crate::diagnostics::Phase::new(false, "tls13_handshake");
     policy.validate()?;
     let (network, ctx, mut wire) = network(peer)?;
     let mut party = Party::new(false, ctx).await?;
-    send(&mut party, Control::Init(policy.clone())).await?;
+    send(
+        &mut party,
+        Control::InitV2 {
+            policy: policy.clone(),
+            schedule: MPC_SCHEDULE,
+        },
+    )
+    .await?;
     let public_key = party.public_key().await?;
     let random = rand::random();
     let session = rand::random();
@@ -263,9 +291,12 @@ pub async fn hub_handshake(
     .await?;
     party.exchange(&server_key).await?;
     let pms = party.pms;
+    let phase = crate::diagnostics::Phase::new(false, "tls13_handshake_schedule");
     let hs = schedule::handshake(party.vm.vm(), pms, &hello_hash)?;
     let server_secret = Zeroizing::new(required(party.reveal(hs.server).await?)?);
+    phase.finish();
     let mut server_hs = Traffic::new(*server_secret)?;
+    let phase = crate::diagnostics::Phase::new(false, "tls13_server_authentication");
     let mut step = 0;
     let mut cert = None;
     let mut ccs = 0;
@@ -325,6 +356,7 @@ pub async fn hub_handshake(
             break;
         }
     }
+    phase.finish();
     let finished_hash = wire::hash(&transcript);
     send(
         &mut party,
@@ -343,6 +375,7 @@ pub async fn hub_handshake(
     if !matches!(recv(&mut party).await?, Control::Ready) {
         return Err(fail("peer handshake readiness mismatch"));
     }
+    _phase.finish();
     Ok(Hub {
         party,
         old,
@@ -363,13 +396,17 @@ async fn application(
     _client_hs: Secret,
     hash: &[u8; 32],
 ) -> Result<(WarmPrefix, Secret, Option<[u8; 32]>)> {
+    let _phase = crate::diagnostics::Phase::new(party.provider, "tls13_application_schedule");
     let vm = party.vm.vm();
-    let old = schedule::expand(vm, master, b"c ap traffic", hash)?;
-    let server = schedule::expand(vm, master, b"s ap traffic", hash)?;
-    let next = schedule::expand(vm, old, b"traffic upd", &[])?;
-    let warm = WarmPrefix::new(vm, old)?;
+    let master = schedule::KeyedHmac::new(vm, master)?;
+    let old = master.expand(vm, b"c ap traffic", hash)?;
+    let server = master.expand(vm, b"s ap traffic", hash)?;
+    let client = schedule::KeyedHmac::new(vm, old)?;
+    let next = client.expand(vm, b"traffic upd", &[])?;
+    let warm = WarmPrefix::new(vm, &client)?;
     // Application response secret is decoded only after Hub verifies the handshake.
     let server = party.reveal(server).await?;
+    _phase.finish();
     Ok((warm, next, server))
 }
 
@@ -383,6 +420,7 @@ pub async fn provider_handshake<T: AsyncRead + AsyncWrite + Unpin + Send + 'stat
     upstream: T,
     policy: Policy,
 ) -> Result<Provider> {
+    let _phase = crate::diagnostics::Phase::new(true, "tls13_handshake");
     policy.validate()?;
     let (network, ctx, wire) = network(peer)?;
     let relay = tokio::spawn(async move {
@@ -391,10 +429,7 @@ pub async fn provider_handshake<T: AsyncRead + AsyncWrite + Unpin + Send + 'stat
     // Abort on any handshake failure as well as when the returned engine is dropped.
     let mut guard = RelayGuard(Some(relay));
     let mut party = Party::new(true, ctx).await?;
-    match recv(&mut party).await? {
-        Control::Init(expected) if expected == policy => {}
-        _ => return Err(fail("peer policy mismatch")),
-    }
+    validate_init(recv(&mut party).await?, &policy)?;
     party.public_key().await?;
     let (server_key, hash) = match recv(&mut party).await? {
         Control::Hello { server_key, hash } => (server_key, hash),
@@ -414,6 +449,7 @@ pub async fn provider_handshake<T: AsyncRead + AsyncWrite + Unpin + Send + 'stat
         return Err(fail("expected client Finished delivery"));
     }
     send(&mut party, Control::Ready).await?;
+    _phase.finish();
     Ok(Provider {
         party,
         old,
@@ -604,5 +640,96 @@ impl Provider {
         }
         send(&mut self.party, Control::Delivered).await?;
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod schedule_tests {
+    use super::*;
+
+    #[test]
+    fn rejects_legacy_and_mismatched_mpc_schedules_before_key_release() {
+        let policy = Policy {
+            server_name: "example.com".into(),
+            max_request: 4096,
+            max_response: 1 << 20,
+        };
+        assert!(
+            validate_init(
+                Control::InitV2 {
+                    policy: policy.clone(),
+                    schedule: MPC_SCHEDULE
+                },
+                &policy
+            )
+            .is_ok()
+        );
+        assert!(
+            validate_init(
+                Control::InitV2 {
+                    policy: policy.clone(),
+                    schedule: 1
+                },
+                &policy
+            )
+            .is_err()
+        );
+        assert!(validate_init(Control::Init(policy.clone()), &policy).is_err());
+    }
+
+    // Exact legacy variant order: the real Io transport uses Bincode, not JSON.
+    #[derive(Serialize, Deserialize)]
+    enum LegacyControl {
+        Init(Policy),
+        Hello {
+            server_key: Vec<u8>,
+            hash: [u8; 32],
+        },
+        Verified {
+            hash: [u8; 32],
+        },
+        Ready,
+        Plan {
+            hash: [u8; 32],
+            start: usize,
+            end: usize,
+            len: usize,
+        },
+        Switched,
+        Delivered,
+    }
+
+    #[tokio::test]
+    async fn bincode_transport_rejects_mixed_schedules_in_both_directions() {
+        let policy = Policy {
+            server_name: "example.com".into(),
+            max_request: 4096,
+            max_response: 1 << 20,
+        };
+        let (a, b) = tokio::io::duplex(1024);
+        let mut sender = Io::from_io(a.compat());
+        let mut receiver = Io::from_io(b.compat());
+        let (sent, received) = tokio::join!(
+            sender.send(Control::InitV2 {
+                policy: policy.clone(),
+                schedule: MPC_SCHEDULE
+            }),
+            receiver.expect_next::<LegacyControl>()
+        );
+        sent.unwrap();
+        assert!(
+            received.is_err(),
+            "old Bincode decoder accepted the new schedule"
+        );
+
+        let (a, b) = tokio::io::duplex(1024);
+        let mut sender = Io::from_io(a.compat());
+        let mut receiver = Io::from_io(b.compat());
+        let (sent, received) = tokio::join!(
+            sender.send(LegacyControl::Init(policy.clone())),
+            receiver.expect_next::<Control>()
+        );
+        sent.unwrap();
+        assert!(validate_init(received.unwrap(), &policy).is_err());
     }
 }

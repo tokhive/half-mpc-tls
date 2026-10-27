@@ -12,6 +12,7 @@ type TaskStatus struct {
 	RefundMicros   int64            `json:"refund_micros"`
 	InputTokens    int64            `json:"input_tokens"`
 	OutputTokens   int64            `json:"output_tokens"`
+	ReviewReason   string           `json:"review_reason,omitempty"`
 }
 
 // Task returns the same not-found result for unknown and foreign tasks.
@@ -35,6 +36,11 @@ func (l *Ledger) Task(consumerID, taskID string) (TaskStatus, bool, error) {
 	}
 	if cancelled := entry.cancellation; cancelled != nil {
 		status.RefundMicros = cancelled.RefundMicros
+	}
+	if review := entry.review; review != nil {
+		status.ReviewReason = "usage_exceeds_reservation"
+		status.InputTokens = review.Usage.InputTokens
+		status.OutputTokens = review.Usage.OutputTokens
 	}
 	return status, true, nil
 }

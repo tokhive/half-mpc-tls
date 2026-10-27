@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"tokenhive.local/half-mpc-tls/internal/egress"
+	"tokenhive.local/half-mpc-tls/internal/protocol"
 )
 
 // An Agent keeps its parent context alive across many one-shot data tunnels.
@@ -61,5 +62,58 @@ func TestProviderCancellationUnblocksIdleConnection(t *testing.T) {
 		}
 	case <-time.After(time.Second):
 		t.Fatal("cancelled Provider remains blocked reading an idle connection")
+	}
+}
+
+type pendingDialer struct {
+	started   chan struct{}
+	cancelled chan struct{}
+}
+
+func (d pendingDialer) DialContext(ctx context.Context, _, _ string) (net.Conn, error) {
+	close(d.started)
+	<-ctx.Done()
+	close(d.cancelled)
+	return nil, ctx.Err()
+}
+
+func TestProviderDisconnectCancelsPendingDial(t *testing.T) {
+	policy, err := egress.NewPolicy([]string{"allowed.example"}, []uint16{443})
+	if err != nil {
+		t.Fatal(err)
+	}
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	peer, connection := net.Pipe()
+	defer peer.Close()
+	defer connection.Close()
+	dialer := pendingDialer{started: make(chan struct{}), cancelled: make(chan struct{})}
+	done := make(chan error, 1)
+	go func() { done <- (&Provider{Policy: policy, Dialer: dialer}).Serve(ctx, connection) }()
+	payload, err := protocol.EncodeTarget(protocol.Target{Host: "allowed.example", Port: 443})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := protocol.NewCodec(peer, peer).WriteFrame(protocol.FrameOpen, 0, 1, payload); err != nil {
+		t.Fatal(err)
+	}
+	select {
+	case <-dialer.started:
+	case <-time.After(time.Second):
+		t.Fatal("Provider did not start upstream dial")
+	}
+	_ = peer.Close()
+	select {
+	case err := <-done:
+		if !errors.Is(err, io.EOF) {
+			t.Fatalf("disconnected tunnel: %v", err)
+		}
+	case <-time.After(time.Second):
+		t.Fatal("Provider did not finish disconnect cleanup")
+	}
+	select {
+	case <-dialer.cancelled:
+	default:
+		t.Fatal("upstream dial outlived its disconnected tunnel")
 	}
 }

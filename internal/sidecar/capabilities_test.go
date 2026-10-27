@@ -140,7 +140,7 @@ func TestTLS13FixtureAndNegotiation(t *testing.T) {
 
 func TestTLS13RejectsIncompatiblePeers(t *testing.T) {
 	hub := TLS13CapabilitiesWithCapacity(RoleHub, BaselineMPCCapacity())
-	for _, feature := range []string{FeatureTLS13KeyUpdate, FeatureAuthenticatedMPCOutput, FeatureProviderDeliveryACK} {
+	for _, feature := range []string{FeatureTLS13KeyUpdate, FeatureAuthenticatedMPCOutput, FeatureTLS13KeyedHMACState, FeatureProviderDeliveryACK} {
 		provider := TLS13CapabilitiesWithCapacity(RoleProvider, BaselineMPCCapacity())
 		features := make([]string, 0)
 		for _, f := range provider.Features {
@@ -163,6 +163,31 @@ func TestTLS13RejectsIncompatiblePeers(t *testing.T) {
 		mutate(&provider)
 		if _, err := Negotiate(hub, provider); err == nil {
 			t.Fatalf("accepted incompatible peer: %+v", provider)
+		}
+	}
+}
+
+func TestCompatibleV1ReleasesCanAdvertiseOptionalFeaturesIndependently(t *testing.T) {
+	for _, tls13 := range []bool{false, true} {
+		for _, upgradedRole := range []string{RoleHub, RoleProvider} {
+			hub := SelectiveMPCCapabilities(RoleHub)
+			provider := SelectiveMPCCapabilities(RoleProvider)
+			if tls13 {
+				hub = TLS13CapabilitiesWithCapacity(RoleHub, LargeMPCCapacity())
+				provider = TLS13CapabilitiesWithCapacity(RoleProvider, LargeMPCCapacity())
+			}
+			if upgradedRole == RoleHub {
+				hub.Features = append(hub.Features, "optional-warm-stage-metrics")
+			} else {
+				provider.Features = append(provider.Features, "optional-warm-stage-metrics")
+			}
+			if _, err := Negotiate(hub, provider); err != nil {
+				t.Fatalf("compatible v1 mixed release tls13=%v upgraded=%s: %v", tls13, upgradedRole, err)
+			}
+			provider.ProtocolVersion++
+			if _, err := Negotiate(hub, provider); err == nil {
+				t.Fatal("accepted an unimplemented frame protocol merely because features overlap")
+			}
 		}
 	}
 }

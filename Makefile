@@ -1,4 +1,4 @@
-.PHONY: build test check smoke smoke-tls13 smoke-tls13-large demo bench-e2e bench-e2e-quick validate-local
+.PHONY: build test check smoke smoke-tls13 smoke-tls13-large demo bench-e2e bench-e2e-quick validate-local profile-warm probe-upstream
 build:
 	mkdir -p bin
 	go build -trimpath -o bin/tokenhive-hub ./cmd/tokenhive-hub
@@ -42,3 +42,12 @@ validate-local: build
 	python3 scripts/validate-production.py --mode faults
 	python3 scripts/validate-production.py --mode profile
 	python3 scripts/validate-production.py --mode soak --seconds 300
+
+profile-warm: build
+	go build -trimpath -o bin/tokenhive-loadtest ./scripts/loadtest
+	python3 scripts/profile-warm.py --tls-version 1.3 --seconds 30
+
+# Public GET only; no API credential or model inference is used.
+probe-upstream:
+	cargo build --manifest-path rust/Cargo.toml --locked --release -p tokenhive-tls13 --example upstream_probe
+	python3 scripts/probe-upstream.py

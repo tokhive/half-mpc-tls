@@ -76,8 +76,12 @@ Provider is the evaluator. Hub-only secrets use independently masked outputs
 and normal MAC-authenticated decoding. TLS 1.3 does not use the TLS 1.2 DEAP
 output path or its public-body keystream schedule.
 
+TLS 1.3 also requires `tls13-keyed-hmac-state`: this is a mandatory MPC schedule
+capability, not optional telemetry. The MPC control channel independently rejects
+legacy Init messages using InitV2/schedule revision 2. Outer RPC framing remains v1.
+
 Capabilities also contain an exact `mpc_capacity` object. Protocol v1 supports
-six exact profiles. The default baseline is:
+six exact profiles. The TLS 1.2 default baseline is:
 
 ```json
 {
@@ -88,7 +92,8 @@ six exact profiles. The default baseline is:
 }
 ```
 
-The largest opt-in public-body profile is:
+The largest profile, now the default for explicitly selected TLS 1.3 processes
+unless `--capacity` is specified, is:
 
 ```json
 {
@@ -108,6 +113,11 @@ above. The cross-language fixture is `testdata/mpc-capacities.json`.
 Each sidecar process advertises one profile selected with `--capacity` on both
 roles. Deployment socket maps allow multiple profiles without mixing sessions. The route's capacity must exactly match the sidecar
 pair, and the warm-session pool never mixes profiles.
+
+TLS 1.3 deployments should use one shared `5m` process/pool for every smaller
+request. Its credential circuit remains bounded to 1 KiB; the remaining body is
+encrypted locally after KeyUpdate. Explicit legacy profiles are still supported.
+TLS 1.2 retains per-capacity preprocessing and its baseline default.
 
 ## Commands
 

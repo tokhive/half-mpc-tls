@@ -33,6 +33,7 @@ class Deployment(bench.Deployment):
         self.commands = {}
         self.generations = {}
         self.events = []
+        kw.setdefault('capacity', '5m')
         super().__init__(*args, **kw)
 
     def launch(self, name, command):
@@ -231,7 +232,7 @@ def main():
     os.umask(0o077)
     root=Path(tempfile.mkdtemp(prefix='tokenhive-validation-',dir='/tmp'))
     save(root/'metadata.json',{'mode':args.mode,'seconds_per_phase':args.seconds,'started_utc':time.strftime('%Y-%m-%dT%H:%M:%SZ',time.gmtime()),
-        'cpu_count':len(os.sched_getaffinity(0)),
+        **bench.host_metadata(), 'capacity': '5m',
         'binary_sha256':{str(p):hashlib.sha256((bench.ROOT/p).read_bytes()).hexdigest() for p in ('bin/tokenhive-hub','bin/tokenhive-provider-agent','bin/tokenhive-loadtest','rust/target/release/tokenhive-sidecar','bin/tokenhive-profile-hub') if (bench.ROOT/p).exists()}})
     print('Artifacts:',root,flush=True)
     if args.mode=='profile':

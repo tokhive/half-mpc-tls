@@ -35,9 +35,10 @@ const (
 type ReservationState string
 
 const (
-	ReservationPending   ReservationState = "pending"
-	ReservationSettled   ReservationState = "settled"
-	ReservationCancelled ReservationState = "cancelled"
+	ReservationPending        ReservationState = "pending"
+	ReservationSettled        ReservationState = "settled"
+	ReservationCancelled      ReservationState = "cancelled"
+	ReservationReviewRequired ReservationState = "review_required"
 )
 
 // PriceSnapshot freezes both the Consumer price and Provider payout for one
@@ -111,6 +112,7 @@ type taskEntry struct {
 	reservation  Reservation
 	settlement   *Settlement
 	cancellation *Cancellation
+	review       *gateway.Receipt
 }
 
 // Ledger is the concurrency-safe reference state machine for account-ledger
@@ -206,18 +208,20 @@ func (l *Ledger) Settle(receipt gateway.Receipt) (Settlement, bool, error) {
 	if entry.cancellation != nil {
 		return Settlement{}, false, ErrLedgerStateConflict
 	}
+	if entry.review != nil {
+		if *entry.review == receipt {
+			return Settlement{}, false, ErrUsageExceedsReservation
+		}
+		return Settlement{}, false, ErrLedgerStateConflict
+	}
 	reservation := &entry.reservation
-	if receipt.ProviderID != reservation.ProviderID || receipt.RequestHash != reservation.RequestHash ||
-		receipt.RequestedModel != reservation.RequestedModel {
-		return Settlement{}, false, ErrTaskConflict
+	if err := receiptBinding(receipt, *reservation); err != nil {
+		return Settlement{}, false, err
 	}
 
 	consumerCharge := int64(0)
 	providerCredit := int64(0)
 	if receipt.Billable {
-		if !modelAllowed(receipt.ResponseModel, reservation.AllowedResponseModels) {
-			return Settlement{}, false, ErrTaskConflict
-		}
 		if receipt.Usage.InputTokens > reservation.MaxInputTokens || receipt.Usage.OutputTokens > reservation.MaxOutputTokens {
 			return Settlement{}, false, ErrUsageExceedsReservation
 		}
@@ -272,6 +276,49 @@ func (l *Ledger) Settle(receipt gateway.Receipt) (Settlement, bool, error) {
 	return result, true, nil
 }
 
+// HoldForReview retains an over-budget receipt and its existing reserve without
+// charging, refunding or paying out. Only matching, otherwise valid evidence may
+// enter review; corrupted or conflicting evidence still fails closed.
+func (l *Ledger) HoldForReview(receipt gateway.Receipt) (bool, error) {
+	if l == nil || !validReceipt(receipt) {
+		return false, ErrInvalidReceipt
+	}
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	entry, exists := l.tasks[receipt.TaskID]
+	if !exists {
+		return false, ErrReservationNotFound
+	}
+	if entry.review != nil {
+		if *entry.review == receipt {
+			return false, nil
+		}
+		return false, ErrLedgerStateConflict
+	}
+	if entry.settlement != nil || entry.cancellation != nil {
+		return false, ErrLedgerStateConflict
+	}
+	r := &entry.reservation
+	if err := receiptBinding(receipt, *r); err != nil {
+		return false, err
+	}
+	if !receipt.Billable || (receipt.Usage.InputTokens <= r.MaxInputTokens && receipt.Usage.OutputTokens <= r.MaxOutputTokens) {
+		return false, ErrInvalidLedgerInput
+	}
+	entry.review = &receipt
+	r.State = ReservationReviewRequired
+	return true, nil
+}
+
+func receiptBinding(receipt gateway.Receipt, reservation Reservation) error {
+	if receipt.ProviderID != reservation.ProviderID || receipt.RequestHash != reservation.RequestHash ||
+		receipt.RequestedModel != reservation.RequestedModel ||
+		(receipt.Billable && !modelAllowed(receipt.ResponseModel, reservation.AllowedResponseModels)) {
+		return ErrTaskConflict
+	}
+	return nil
+}
+
 // Cancel refunds a pending reservation when no authenticated receipt can be
 // produced. reasonCode is stable audit metadata, not a free-form error string.
 func (l *Ledger) Cancel(taskID, reasonCode string) (Cancellation, bool, error) {
@@ -290,7 +337,7 @@ func (l *Ledger) Cancel(taskID, reasonCode string) (Cancellation, bool, error) {
 		}
 		return Cancellation{}, false, ErrLedgerStateConflict
 	}
-	if entry.settlement != nil {
+	if entry.settlement != nil || entry.review != nil {
 		return Cancellation{}, false, ErrLedgerStateConflict
 	}
 	reservation := &entry.reservation

@@ -157,10 +157,17 @@ func (c *Coordinator) Execute(ctx context.Context, writer http.ResponseWriter, c
 	// A disconnected Consumer may still be drained and settled, but never past
 	// the original request deadline. Response reads need transport closure to
 	// observe that deadline; their parser is not context-aware.
+	responseCtx := context.WithoutCancel(ctx)
 	if deadline, ok := ctx.Deadline(); ok {
-		timer := time.AfterFunc(time.Until(deadline), lease.Discard)
-		defer timer.Stop()
+		var cancel context.CancelFunc
+		responseCtx, cancel = context.WithDeadline(responseCtx, deadline)
+		defer cancel()
 	}
+	// The same context must drive both transport closure and error attribution.
+	// Its error is set before the callback runs, eliminating the independent-timer
+	// race. Downstream cancellation still permits draining within this deadline.
+	stop := context.AfterFunc(responseCtx, lease.Discard)
+	defer stop()
 	session, ok := lease.Resource().(Session)
 	if !ok || session.Responses() == nil {
 		c.health.Failure(route.ProviderID, providerhealth.FailureProtocol)
@@ -172,8 +179,11 @@ func (c *Coordinator) Execute(ctx context.Context, writer http.ResponseWriter, c
 		PublicRequestHash: requestHash,
 	}, request.Bytes)
 	if err != nil {
-		if errors.Is(ctx.Err(), context.DeadlineExceeded) {
+		if ctx.Err() != nil {
 			return ctx.Err()
+		}
+		if responseCtx.Err() != nil {
+			return responseCtx.Err()
 		}
 		c.health.Failure(route.ProviderID, providerhealth.FailureProtocol)
 		return fmt.Errorf("%w: request delivery failed", ErrProtocolFailure)
@@ -183,14 +193,14 @@ func (c *Coordinator) Execute(ctx context.Context, writer http.ResponseWriter, c
 		c.health.Failure(route.ProviderID, providerhealth.FailureProtocol)
 		return fmt.Errorf("%w: request binding mismatch", ErrProtocolFailure)
 	}
-	httpRequest, err := http.NewRequestWithContext(ctx, http.MethodPost, "https://"+route.Host+"/v1/chat/completions", nil)
+	httpRequest, err := http.NewRequestWithContext(responseCtx, http.MethodPost, "https://"+route.Host+"/v1/chat/completions", nil)
 	if err != nil {
 		return err
 	}
 	upstream, err := session.Responses().Next(httpRequest)
 	if err != nil {
-		if errors.Is(ctx.Err(), context.DeadlineExceeded) {
-			return ctx.Err()
+		if responseCtx.Err() != nil {
+			return responseCtx.Err()
 		}
 		c.health.Failure(route.ProviderID, providerhealth.FailureProtocol)
 		return fmt.Errorf("%w: invalid authenticated response", ErrProtocolFailure)
@@ -207,8 +217,8 @@ func (c *Coordinator) Execute(ctx context.Context, writer http.ResponseWriter, c
 		reservationOpen = false
 	}
 	if relayErr != nil {
-		if errors.Is(ctx.Err(), context.DeadlineExceeded) {
-			return ctx.Err()
+		if responseCtx.Err() != nil {
+			return responseCtx.Err()
 		}
 		if errors.Is(relayErr, gateway.ErrResponseRejected) {
 			c.health.Failure(route.ProviderID, providerhealth.FailureProtocol)

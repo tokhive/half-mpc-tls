@@ -32,25 +32,63 @@ pub fn xor_bytes(vm: &mut dyn Vm<Binary>, a: Vector<U8>, b: Vector<U8>) -> Resul
     )?)
 }
 
-pub fn hmac(vm: &mut dyn Vm<Binary>, key: Secret, input: &[Vector<U8>]) -> Result<Secret> {
-    let inner_pad = public(vm, &[0x36; 32])?;
-    let outer_pad = public(vm, &[0x5c; 32])?;
-    let inner_key = xor_bytes(vm, key.into(), inner_pad)?;
-    let outer_key = xor_bytes(vm, key.into(), outer_pad)?;
-    let mut inner = Sha256::new();
-    inner.update(&inner_key);
-    inner.update(&inner_pad);
-    for data in input {
-        inner.update(data);
+// This holds references to two keyed SHA-256 states in the current VM, never
+// plaintext keys or reusable OT material. Each message creates fresh outputs.
+pub(crate) struct KeyedHmac {
+    inner: Sha256,
+    outer: Sha256,
+}
+
+impl KeyedHmac {
+    pub(crate) fn new(vm: &mut dyn Vm<Binary>, key: Secret) -> Result<Self> {
+        let mut prefix = |pad| -> Result<Sha256> {
+            let padding = public(vm, &[pad; 32])?;
+            let masked = xor_bytes(vm, key.into(), padding)?;
+            let mut state = Sha256::new();
+            state.update(&masked);
+            state.update(&padding);
+            state.compress(vm)?;
+            Ok(state)
+        };
+        Ok(Self {
+            inner: prefix(0x36)?,
+            outer: prefix(0x5c)?,
+        })
     }
-    inner.compress(vm)?;
-    let digest = inner.finalize(vm)?;
-    let mut outer = Sha256::new();
-    outer.update(&outer_key);
-    outer.update(&outer_pad);
-    outer.update(&digest.into());
-    outer.compress(vm)?;
-    Ok(outer.finalize(vm)?)
+
+    fn sign(&self, vm: &mut dyn Vm<Binary>, input: &[Vector<U8>]) -> Result<Secret> {
+        let mut inner = self.inner.clone();
+        for data in input {
+            inner.update(data);
+        }
+        inner.compress(vm)?;
+        let digest = inner.finalize(vm)?;
+        let mut outer = self.outer.clone();
+        outer.update(&digest.into());
+        Ok(outer.finalize(vm)?)
+    }
+
+    pub(crate) fn expand(
+        &self,
+        vm: &mut dyn Vm<Binary>,
+        label: &[u8],
+        context: &[u8],
+    ) -> Result<Secret> {
+        let info = public(vm, &label_bytes(label, context, 32)?)?;
+        self.sign(vm, &[info])
+    }
+
+    pub(crate) fn key_iv(&self, vm: &mut dyn Vm<Binary>) -> Result<(Array<U8, 16>, Array<U8, 12>)> {
+        let info = public(vm, &label_bytes(b"key", &[], 16)?)?;
+        let key = self.sign(vm, &[info])?;
+        let info = public(vm, &label_bytes(b"iv", &[], 12)?)?;
+        let iv = self.sign(vm, &[info])?;
+        Ok((key.get::<16>(0).unwrap(), iv.get::<12>(0).unwrap()))
+    }
+}
+
+pub fn hmac(vm: &mut dyn Vm<Binary>, key: Secret, input: &[Vector<U8>]) -> Result<Secret> {
+    KeyedHmac::new(vm, key)?.sign(vm, input)
 }
 
 pub fn label_bytes(label: &[u8], context: &[u8], len: usize) -> Result<Vec<u8>> {
@@ -68,6 +106,7 @@ pub fn label_bytes(label: &[u8], context: &[u8], len: usize) -> Result<Vec<u8>> 
     Ok(info)
 }
 
+#[cfg(test)]
 pub fn expand(
     vm: &mut dyn Vm<Binary>,
     secret: Secret,
@@ -78,12 +117,9 @@ pub fn expand(
     hmac(vm, secret, &[info])
 }
 
+#[cfg(test)]
 pub fn key_iv(vm: &mut dyn Vm<Binary>, secret: Secret) -> Result<(Array<U8, 16>, Array<U8, 12>)> {
-    let info = public(vm, &label_bytes(b"key", &[], 16)?)?;
-    let key = hmac(vm, secret, &[info])?;
-    let info = public(vm, &label_bytes(b"iv", &[], 12)?)?;
-    let iv = hmac(vm, secret, &[info])?;
-    Ok((key.get::<16>(0).unwrap(), iv.get::<12>(0).unwrap()))
+    KeyedHmac::new(vm, secret)?.key_iv(vm)
 }
 
 pub struct Handshake {
@@ -103,9 +139,10 @@ pub fn handshake(
     let derived = local_expand(&early, b"derived", &empty, 32)?;
     let derived: Secret = public(vm, &derived)?.try_into()?;
     let hs = hmac(vm, derived, &[ecdhe.into()])?;
-    let client = expand(vm, hs, b"c hs traffic", hello_hash)?;
-    let server = expand(vm, hs, b"s hs traffic", hello_hash)?;
-    let derived = expand(vm, hs, b"derived", &empty)?;
+    let keyed_hs = KeyedHmac::new(vm, hs)?;
+    let client = keyed_hs.expand(vm, b"c hs traffic", hello_hash)?;
+    let server = keyed_hs.expand(vm, b"s hs traffic", hello_hash)?;
+    let derived = keyed_hs.expand(vm, b"derived", &empty)?;
     let zero = public(vm, &[0; 32])?;
     let master = hmac(vm, derived, &[zero])?;
     Ok(Handshake {
@@ -142,6 +179,41 @@ mod tests {
     use super::*;
     use mpz_common::context::test_st_context;
     use mpz_ideal_vm::IdealVm;
+
+    #[tokio::test]
+    async fn keyed_prefix_reuse_matches_independent_hmac_across_padding_and_messages() {
+        let messages: Vec<Vec<u8>> = [0, 1, 31, 32, 55, 56, 63, 64, 65, 128, 1024, 1]
+            .into_iter()
+            .map(|n| vec![0xa5; n])
+            .collect();
+        let (ca, cb) = test_st_context(128);
+        let run = |mut vm: IdealVm, mut ctx: mpz_common::Context| {
+            let messages = &messages;
+            async move {
+                let key = public(&mut vm, &[7; 32]).unwrap().try_into().unwrap();
+                let mac = KeyedHmac::new(&mut vm, key).unwrap();
+                let mut outputs = Vec::new();
+                for message in messages {
+                    let parts: Vec<_> = message
+                        .chunks(17)
+                        .map(|part| public(&mut vm, part).unwrap())
+                        .collect();
+                    let value = mac.sign(&mut vm, &parts).unwrap();
+                    outputs.push(vm.decode(value).unwrap());
+                }
+                vm.execute_all(&mut ctx).await.unwrap();
+                outputs
+                    .into_iter()
+                    .map(|mut output| output.try_recv().unwrap().unwrap())
+                    .collect::<Vec<_>>()
+            }
+        };
+        let (a, b) = tokio::join!(run(IdealVm::new(), ca), run(IdealVm::new(), cb));
+        assert_eq!(a, b);
+        for (message, actual) in messages.iter().zip(a) {
+            assert_eq!(actual, local_hmac(&[7; 32], message));
+        }
+    }
 
     #[tokio::test]
     async fn shared_hkdf_matches_independent_rfc_schedule() {

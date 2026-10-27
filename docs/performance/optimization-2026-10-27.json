@@ -1,0 +1,792 @@
+{
+  "before": {
+    "host": {
+      "cpu_count": 11,
+      "cpu_model": "Apple M3 Pro",
+      "mem_total_kib": 37748736,
+      "resource_method": "ps time/rss; vm_stat free+inactive estimate; threads/fds not sampled"
+    },
+    "tls_version": "1.3",
+    "capacity": "5m",
+    "limitations": [
+      "Whole-process CPU deltas include concurrent tasks; nested intervals cannot be added.",
+      "Native stack samples on macOS include idle/waiting threads.",
+      "Generated local upstream; no production-model or WAN capacity claim."
+    ],
+    "load": {
+      "admission_seconds": 30,
+      "attempted": 113,
+      "completed_rps": 3.6750903269709174,
+      "concurrency": 4,
+      "dropped_arrivals": 0,
+      "elapsed_seconds": 30.747543583,
+      "errors": {},
+      "failed": 0,
+      "first_content_ms": {
+        "max": 1208.844417,
+        "min": 265.308125,
+        "p50": 1094.137958,
+        "p95": 1161.850541,
+        "p99": 1197.087042
+      },
+      "max_event_gap_ms": null,
+      "peak_inflight": 4,
+      "prompt_bytes": 1024,
+      "rate": 0,
+      "ready_each": false,
+      "schedule_lag_ms": {
+        "max": 0.000625,
+        "min": 4.2e-05,
+        "p50": 0.000292,
+        "p95": 0.000458,
+        "p99": 0.000542
+      },
+      "stream": false,
+      "succeeded": 113,
+      "total_ms": {
+        "max": 1208.844459,
+        "min": 265.308166,
+        "p50": 1094.138,
+        "p95": 1161.850583,
+        "p99": 1197.087084
+      },
+      "ttfb_ms": {
+        "max": 1208.778125,
+        "min": 265.130125,
+        "p50": 1094.071125,
+        "p95": 1161.73375,
+        "p99": 1197.020959
+      },
+      "name": "warm-profile",
+      "capacity": "5m",
+      "one_way_data_delay_ms": 0,
+      "direct": false,
+      "startup_ready_ms": 687.0485001709312,
+      "process_cpu_seconds": {
+        "hub-sidecar": 31.59,
+        "provider-sidecar": 36.94,
+        "hub": 29.0,
+        "agent": 23.43
+      },
+      "process_peak_rss_mib": {
+        "hub-sidecar": 184.671875,
+        "provider-sidecar": 173.234375,
+        "hub": 27.1875,
+        "agent": 23.328125
+      },
+      "sum_peak_rss_mib": 403.109375,
+      "resource_window_seconds": 31.106269957963377,
+      "upstream_requests": 113,
+      "durable_receipts": 113,
+      "mean_cpu_cores": 3.8886050999835025,
+      "steady_completion_rps": 3.55,
+      "steady_window_seconds": 20,
+      "admission_error_ratio": 0.0
+    },
+    "cleanup": [],
+    "stages": [
+      {
+        "role": "hub",
+        "phase": "tls13_application_schedule",
+        "count": 117,
+        "wall_ms_median": 298.947,
+        "process_cpu_ms_median": 308.167
+      },
+      {
+        "role": "hub",
+        "phase": "tls13_credential_encryption",
+        "count": 113,
+        "wall_ms_median": 13.89225,
+        "process_cpu_ms_median": 10.282
+      },
+      {
+        "role": "hub",
+        "phase": "tls13_ecdhe_shares",
+        "count": 117,
+        "wall_ms_median": 1.206875,
+        "process_cpu_ms_median": 1.607
+      },
+      {
+        "role": "hub",
+        "phase": "tls13_handshake",
+        "count": 117,
+        "wall_ms_median": 538.440583,
+        "process_cpu_ms_median": 540.871
+      },
+      {
+        "role": "hub",
+        "phase": "tls13_handshake_schedule",
+        "count": 117,
+        "wall_ms_median": 168.286292,
+        "process_cpu_ms_median": 167.611
+      },
+      {
+        "role": "hub",
+        "phase": "tls13_key_exchange_setup",
+        "count": 117,
+        "wall_ms_median": 26.002584,
+        "process_cpu_ms_median": 28.888
+      },
+      {
+        "role": "hub",
+        "phase": "tls13_server_authentication",
+        "count": 117,
+        "wall_ms_median": 1.24975,
+        "process_cpu_ms_median": 1.478
+      },
+      {
+        "role": "hub",
+        "phase": "tls13_vm_execute",
+        "count": 694,
+        "wall_ms_median": 17.385832999999998,
+        "process_cpu_ms_median": 18.7305
+      },
+      {
+        "role": "provider",
+        "phase": "tls13_application_schedule",
+        "count": 117,
+        "wall_ms_median": 299.250042,
+        "process_cpu_ms_median": 361.621
+      },
+      {
+        "role": "provider",
+        "phase": "tls13_credential_encryption",
+        "count": 113,
+        "wall_ms_median": 11.373625,
+        "process_cpu_ms_median": 11.57
+      },
+      {
+        "role": "provider",
+        "phase": "tls13_ecdhe_shares",
+        "count": 117,
+        "wall_ms_median": 0.610125,
+        "process_cpu_ms_median": 0.989
+      },
+      {
+        "role": "provider",
+        "phase": "tls13_handshake",
+        "count": 117,
+        "wall_ms_median": 538.0975,
+        "process_cpu_ms_median": 632.161
+      },
+      {
+        "role": "provider",
+        "phase": "tls13_key_exchange_setup",
+        "count": 117,
+        "wall_ms_median": 26.216375,
+        "process_cpu_ms_median": 31.977
+      },
+      {
+        "role": "provider",
+        "phase": "tls13_vm_execute",
+        "count": 694,
+        "wall_ms_median": 16.661479,
+        "process_cpu_ms_median": 22.991
+      }
+    ],
+    "native_sampling": [
+      {
+        "process": "hub-sidecar",
+        "status": "captured",
+        "exit_code": 0,
+        "artifact": "hub-sidecar.sample.txt"
+      },
+      {
+        "process": "provider-sidecar",
+        "status": "captured",
+        "exit_code": 0,
+        "artifact": "provider-sidecar.sample.txt"
+      }
+    ],
+    "binary_sha256": {
+      "bin/tokenhive-hub": "ef0409d18e0386a0a850822f258d73fa53765160c5b8f667d689c0d02f378bcd",
+      "bin/tokenhive-provider-agent": "720f14353069c83544c62e2c48882d239b01ca0551f548ea15cdbb5d1de572b2",
+      "rust/target/release/tokenhive-sidecar": "67db88ef36775b63920197cf6a61bdf69433904f7c2dd00e78e2ebc4d70d0e9b"
+    },
+    "hash_recording": "recorded after run, before any binary rebuild"
+  },
+  "after": {
+    "host": {
+      "cpu_count": 11,
+      "cpu_model": "Apple M3 Pro",
+      "mem_total_kib": 37748736,
+      "resource_method": "ps time/rss; vm_stat free+inactive estimate; threads/fds not sampled"
+    },
+    "tls_version": "1.3",
+    "capacity": "5m",
+    "binary_sha256": {
+      "bin/tokenhive-hub": "d4689c775f8be3424330ccdb2cdacae4e3a57ed8376ee571b98d5a2f79226101",
+      "bin/tokenhive-provider-agent": "92701a0d662d4be06305ceec8ef0238e0866c475e7eb56667fd5597bcfc68c12",
+      "rust/target/release/tokenhive-sidecar": "7d3d5f5915f6cc5517d301efb869bad33b23879b848b668c4435515c15a18642"
+    },
+    "limitations": [
+      "Whole-process CPU deltas include concurrent tasks; nested intervals cannot be added.",
+      "Native stack samples on macOS include idle/waiting threads.",
+      "Generated local upstream; no production-model or WAN capacity claim."
+    ],
+    "load": {
+      "admission_seconds": 30,
+      "attempted": 126,
+      "completed_rps": 4.112952725847989,
+      "concurrency": 4,
+      "dropped_arrivals": 0,
+      "elapsed_seconds": 30.634925417,
+      "errors": {},
+      "failed": 0,
+      "first_content_ms": {
+        "max": 1126.242208,
+        "min": 260.09325,
+        "p50": 967.495125,
+        "p95": 1063.395291,
+        "p99": 1126.141625
+      },
+      "max_event_gap_ms": null,
+      "peak_inflight": 4,
+      "prompt_bytes": 1024,
+      "rate": 0,
+      "ready_each": false,
+      "schedule_lag_ms": {
+        "max": 0.001042,
+        "min": 4.1e-05,
+        "p50": 0.000291,
+        "p95": 0.000459,
+        "p99": 0.000625
+      },
+      "stream": false,
+      "succeeded": 126,
+      "total_ms": {
+        "max": 1126.24225,
+        "min": 260.093333,
+        "p50": 967.495125,
+        "p95": 1063.395333,
+        "p99": 1126.141625
+      },
+      "ttfb_ms": {
+        "max": 1126.169166,
+        "min": 259.749916,
+        "p50": 967.422375,
+        "p95": 1063.299875,
+        "p99": 1126.079833
+      },
+      "name": "warm-profile",
+      "capacity": "5m",
+      "one_way_data_delay_ms": 0,
+      "direct": false,
+      "startup_ready_ms": 817.8517501801252,
+      "process_cpu_seconds": {
+        "hub-sidecar": 29.87,
+        "provider-sidecar": 34.1,
+        "hub": 26.83,
+        "agent": 21.59
+      },
+      "process_peak_rss_mib": {
+        "hub-sidecar": 162.046875,
+        "provider-sidecar": 166.765625,
+        "hub": 38.75,
+        "agent": 23.234375
+      },
+      "sum_peak_rss_mib": 388.203125,
+      "resource_window_seconds": 30.79427199997008,
+      "upstream_requests": 126,
+      "durable_receipts": 126,
+      "mean_cpu_cores": 3.649704724310716,
+      "steady_completion_rps": 4.1,
+      "steady_window_seconds": 20,
+      "admission_error_ratio": 0.0
+    },
+    "cleanup": [],
+    "stages": [
+      {
+        "role": "hub",
+        "phase": "tls13_application_schedule",
+        "count": 128,
+        "wall_ms_median": 270.44995800000004,
+        "process_cpu_ms_median": 264.068
+      },
+      {
+        "role": "hub",
+        "phase": "tls13_credential_encryption",
+        "count": 126,
+        "wall_ms_median": 12.9085,
+        "process_cpu_ms_median": 10.669
+      },
+      {
+        "role": "hub",
+        "phase": "tls13_ecdhe_shares",
+        "count": 130,
+        "wall_ms_median": 1.2081870000000001,
+        "process_cpu_ms_median": 1.5339999999999998
+      },
+      {
+        "role": "hub",
+        "phase": "tls13_handshake",
+        "count": 128,
+        "wall_ms_median": 477.384937,
+        "process_cpu_ms_median": 465.80600000000004
+      },
+      {
+        "role": "hub",
+        "phase": "tls13_handshake_schedule",
+        "count": 130,
+        "wall_ms_median": 141.8552085,
+        "process_cpu_ms_median": 135.3955
+      },
+      {
+        "role": "hub",
+        "phase": "tls13_key_exchange_setup",
+        "count": 130,
+        "wall_ms_median": 26.435979500000002,
+        "process_cpu_ms_median": 29.2275
+      },
+      {
+        "role": "hub",
+        "phase": "tls13_server_authentication",
+        "count": 130,
+        "wall_ms_median": 1.257125,
+        "process_cpu_ms_median": 1.6084999999999998
+      },
+      {
+        "role": "hub",
+        "phase": "tls13_vm_execute",
+        "count": 768,
+        "wall_ms_median": 17.163375000000002,
+        "process_cpu_ms_median": 18.22
+      },
+      {
+        "role": "provider",
+        "phase": "tls13_application_schedule",
+        "count": 128,
+        "wall_ms_median": 268.34375,
+        "process_cpu_ms_median": 304.009
+      },
+      {
+        "role": "provider",
+        "phase": "tls13_credential_encryption",
+        "count": 126,
+        "wall_ms_median": 11.760562499999999,
+        "process_cpu_ms_median": 10.8635
+      },
+      {
+        "role": "provider",
+        "phase": "tls13_ecdhe_shares",
+        "count": 130,
+        "wall_ms_median": 0.618833,
+        "process_cpu_ms_median": 1.0715
+      },
+      {
+        "role": "provider",
+        "phase": "tls13_handshake",
+        "count": 128,
+        "wall_ms_median": 476.666521,
+        "process_cpu_ms_median": 530.271
+      },
+      {
+        "role": "provider",
+        "phase": "tls13_key_exchange_setup",
+        "count": 130,
+        "wall_ms_median": 26.591875,
+        "process_cpu_ms_median": 31.9575
+      },
+      {
+        "role": "provider",
+        "phase": "tls13_vm_execute",
+        "count": 768,
+        "wall_ms_median": 17.030875,
+        "process_cpu_ms_median": 22.0345
+      }
+    ],
+    "native_sampling": [
+      {
+        "process": "hub-sidecar",
+        "status": "captured",
+        "exit_code": 0,
+        "artifact": "hub-sidecar.sample.txt"
+      },
+      {
+        "process": "provider-sidecar",
+        "status": "captured",
+        "exit_code": 0,
+        "artifact": "provider-sidecar.sample.txt"
+      }
+    ]
+  },
+  "openai_probe": {
+    "created_utc": "2026-10-27T08:32:05Z",
+    "host": "api.openai.com",
+    "path": "/v1/models",
+    "exit_network": "this runner, not a production Provider",
+    "ordinary_tls_baseline": {
+      "http_status": null,
+      "tls_verified": false,
+      "error": "network_or_tls_failed"
+    },
+    "samples": [
+      {
+        "authenticated_close": false,
+        "authorization_sent": false,
+        "client_hello_captured": false,
+        "early_response_detection": "not_available_in_pull_relay",
+        "error": "timeout",
+        "full_request_consumption_confirmed": false,
+        "host": "api.openai.com",
+        "http_status": null,
+        "paid_inference_called": false,
+        "path": "/v1/models",
+        "real_two_party_mpc": true,
+        "scope": "This runner's exit network only; not production Provider admission. A 401/403 may precede full request consumption.",
+        "stage": "connect",
+        "total_ms": 60003.275833,
+        "warm_ms": null,
+        "exit_code": 1
+      },
+      {
+        "authenticated_close": false,
+        "authorization_sent": false,
+        "client_hello_captured": false,
+        "early_response_detection": "not_available_in_pull_relay",
+        "error": "timeout",
+        "full_request_consumption_confirmed": false,
+        "host": "api.openai.com",
+        "http_status": null,
+        "paid_inference_called": false,
+        "path": "/v1/models",
+        "real_two_party_mpc": true,
+        "scope": "This runner's exit network only; not production Provider admission. A 401/403 may precede full request consumption.",
+        "stage": "connect",
+        "total_ms": 60002.078875,
+        "warm_ms": null,
+        "exit_code": 1
+      }
+    ],
+    "limitations": [
+      "Ordinary TLS baseline uses a different ClientHello.",
+      "A 401/403 may precede full request consumption.",
+      "No authenticated business call, paid inference, model or usage verification."
+    ],
+    "fingerprint_repeated_consistently": false
+  },
+  "artifacts": {
+    "before": "/tmp/tokenhive-warm-profile-azsg8hh1/summary.json",
+    "after": "/tmp/tokenhive-warm-profile-rit87s3k/summary.json",
+    "openai_probe": "/tmp/tokenhive-upstream-probe-rdhgbt97/summary.json",
+    "public_probe": "/tmp/tokenhive-upstream-probe-5x27cd7x/summary.json"
+  },
+  "interpretation": [
+    "One instrumented before/after run on a shared host; not a statistically established speedup.",
+    "macOS native sampling includes idle threads and adds substantial overhead.",
+    "Whole-process CPU and nested phases cannot be added.",
+    "No real credential, paid inference, WAN throughput, or 24-hour acceptance."
+  ],
+  "public_probe": {
+    "created_utc": "2026-10-27T09:29:45Z",
+    "host": "www.cloudflare.com",
+    "path": "/cdn-cgi/trace",
+    "exit_network": "this runner, not a production Provider",
+    "probe_binary_sha256": "ef6bac1329f53859af2ad899b2cc2078e526fc15b010b4c88d4dbfbba9d24d52",
+    "ordinary_tls_baseline": {
+      "http_status": 200,
+      "tls_verified": true,
+      "ms": 1254.1685418691486
+    },
+    "samples": [
+      {
+        "authenticated_close": true,
+        "authorization_sent": false,
+        "client_hello_captured": true,
+        "early_response_detection": "not_available_in_pull_relay",
+        "error": null,
+        "full_request_consumption_confirmed": false,
+        "host": "www.cloudflare.com",
+        "http_status": 200,
+        "paid_inference_called": false,
+        "path": "/cdn-cgi/trace",
+        "real_two_party_mpc": true,
+        "scope": "This runner's exit network only; not production Provider admission. A 401/403 may precede full request consumption.",
+        "stage": "authenticated_http_response",
+        "total_ms": 1427.7104590000001,
+        "warm_ms": 969.26675,
+        "exit_code": 0,
+        "fingerprint": {
+          "ja3_raw": "771,4865,0-10-13-43-51-16,23,",
+          "ja3": "fe282bc22b5ca253a3961431d569f58d",
+          "ja4": "t13d0106h1_0f2cb44170f4_6dca215ec8fb",
+          "ja4_b_raw": "1301",
+          "ja4_c_raw": "000a,000d,002b,0033_0804,0403,0807",
+          "ciphers": [
+            4865
+          ],
+          "extensions": [
+            0,
+            10,
+            13,
+            43,
+            51,
+            16
+          ],
+          "groups": [
+            23
+          ],
+          "signature_algorithms": [
+            2052,
+            1027,
+            2055
+          ],
+          "alpn": [
+            "http/1.1"
+          ],
+          "basis": "captured plaintext ClientHello; no API credential or TLS traffic secret"
+        }
+      },
+      {
+        "authenticated_close": true,
+        "authorization_sent": false,
+        "client_hello_captured": true,
+        "early_response_detection": "not_available_in_pull_relay",
+        "error": null,
+        "full_request_consumption_confirmed": false,
+        "host": "www.cloudflare.com",
+        "http_status": 200,
+        "paid_inference_called": false,
+        "path": "/cdn-cgi/trace",
+        "real_two_party_mpc": true,
+        "scope": "This runner's exit network only; not production Provider admission. A 401/403 may precede full request consumption.",
+        "stage": "authenticated_http_response",
+        "total_ms": 911.5321250000001,
+        "warm_ms": 673.610667,
+        "exit_code": 0,
+        "fingerprint": {
+          "ja3_raw": "771,4865,0-10-13-43-51-16,23,",
+          "ja3": "fe282bc22b5ca253a3961431d569f58d",
+          "ja4": "t13d0106h1_0f2cb44170f4_6dca215ec8fb",
+          "ja4_b_raw": "1301",
+          "ja4_c_raw": "000a,000d,002b,0033_0804,0403,0807",
+          "ciphers": [
+            4865
+          ],
+          "extensions": [
+            0,
+            10,
+            13,
+            43,
+            51,
+            16
+          ],
+          "groups": [
+            23
+          ],
+          "signature_algorithms": [
+            2052,
+            1027,
+            2055
+          ],
+          "alpn": [
+            "http/1.1"
+          ],
+          "basis": "captured plaintext ClientHello; no API credential or TLS traffic secret"
+        }
+      }
+    ],
+    "limitations": [
+      "Ordinary TLS baseline uses a different ClientHello.",
+      "A 401/403 may precede full request consumption.",
+      "No authenticated business call, paid inference, model or usage verification."
+    ],
+    "fingerprint_repeated_consistently": true
+  },
+  "final_validation": {
+    "root": "/tmp/tokenhive-final-validation-bflt571d",
+    "started_utc": "2026-10-27T09:11:54.596190+00:00",
+    "phases": [
+      {
+        "name": "build-probe",
+        "command": [
+          "cargo",
+          "build",
+          "--manifest-path",
+          "rust/Cargo.toml",
+          "--locked",
+          "--release",
+          "-p",
+          "tokenhive-tls13",
+          "--example",
+          "upstream_probe"
+        ],
+        "started_utc": "2026-10-27T09:11:54.596343+00:00",
+        "artifacts": [],
+        "pid": 67638,
+        "exit_code": 0,
+        "finished_utc": "2026-10-27T09:12:01.874425+00:00"
+      },
+      {
+        "name": "real-tls13",
+        "command": [
+          "cargo",
+          "test",
+          "--manifest-path",
+          "rust/Cargo.toml",
+          "--locked",
+          "--release",
+          "-p",
+          "tokenhive-tls13",
+          "--test",
+          "real",
+          "--",
+          "--ignored",
+          "--nocapture",
+          "--test-threads=1"
+        ],
+        "started_utc": "2026-10-27T09:12:01.874712+00:00",
+        "artifacts": [],
+        "pid": 67683,
+        "exit_code": 0,
+        "finished_utc": "2026-10-27T09:12:05.501867+00:00"
+      },
+      {
+        "name": "smoke-tls12",
+        "command": [
+          "python3",
+          "scripts/demo.py",
+          "--check"
+        ],
+        "started_utc": "2026-10-27T09:12:05.502148+00:00",
+        "artifacts": [
+          "/tmp/tokenhive-demo-u0pombli"
+        ],
+        "pid": 67730,
+        "exit_code": 0,
+        "finished_utc": "2026-10-27T09:12:08.598787+00:00"
+      },
+      {
+        "name": "smoke-tls13",
+        "command": [
+          "python3",
+          "scripts/demo.py",
+          "--check",
+          "--tls-version",
+          "1.3"
+        ],
+        "started_utc": "2026-10-27T09:12:08.599076+00:00",
+        "artifacts": [
+          "/tmp/tokenhive-demo-a9c6tkym"
+        ],
+        "pid": 67747,
+        "exit_code": 0,
+        "finished_utc": "2026-10-27T09:12:10.798845+00:00"
+      },
+      {
+        "name": "smoke-tls13-large",
+        "command": [
+          "python3",
+          "scripts/demo.py",
+          "--check",
+          "--tls-version",
+          "1.3",
+          "--capacity",
+          "5m",
+          "--prompt-bytes",
+          "5241856"
+        ],
+        "started_utc": "2026-10-27T09:12:10.799095+00:00",
+        "artifacts": [
+          "/tmp/tokenhive-demo-x4qbygtu"
+        ],
+        "pid": 67771,
+        "exit_code": 0,
+        "finished_utc": "2026-10-27T09:12:13.502883+00:00"
+      },
+      {
+        "name": "warm-profile",
+        "command": [
+          "python3",
+          "scripts/profile-warm.py",
+          "--tls-version",
+          "1.3",
+          "--seconds",
+          "30"
+        ],
+        "started_utc": "2026-10-27T09:12:13.503605+00:00",
+        "artifacts": [
+          "/tmp/tokenhive-warm-profile-rit87s3k"
+        ],
+        "pid": 67795,
+        "exit_code": 0,
+        "finished_utc": "2026-10-27T09:12:45.915781+00:00"
+      },
+      {
+        "name": "faults",
+        "command": [
+          "python3",
+          "scripts/validate-production.py",
+          "--mode",
+          "faults"
+        ],
+        "started_utc": "2026-10-27T09:12:45.916049+00:00",
+        "artifacts": [
+          "/tmp/tokenhive-validation-0zpwezv1"
+        ],
+        "pid": 68800,
+        "exit_code": 0,
+        "finished_utc": "2026-10-27T09:13:39.873053+00:00"
+      },
+      {
+        "name": "go-profile",
+        "command": [
+          "python3",
+          "scripts/validate-production.py",
+          "--mode",
+          "profile"
+        ],
+        "started_utc": "2026-10-27T09:13:39.873409+00:00",
+        "artifacts": [
+          "/tmp/tokenhive-validation-r9cl69xm"
+        ],
+        "pid": 69500,
+        "exit_code": 0,
+        "finished_utc": "2026-10-27T09:14:43.754395+00:00"
+      },
+      {
+        "name": "soak",
+        "command": [
+          "python3",
+          "scripts/validate-production.py",
+          "--mode",
+          "soak",
+          "--seconds",
+          "300"
+        ],
+        "started_utc": "2026-10-27T09:14:43.754643+00:00",
+        "artifacts": [
+          "/tmp/tokenhive-validation-mnlvmtr6"
+        ],
+        "pid": 71427,
+        "exit_code": 0,
+        "finished_utc": "2026-10-27T09:29:45.792721+00:00"
+      },
+      {
+        "name": "public-probe",
+        "command": [
+          "python3",
+          "scripts/probe-upstream.py",
+          "--host",
+          "www.cloudflare.com",
+          "--path",
+          "/cdn-cgi/trace",
+          "--samples",
+          "2"
+        ],
+        "started_utc": "2026-10-27T09:29:45.793488+00:00",
+        "artifacts": [
+          "/tmp/tokenhive-upstream-probe-5x27cd7x"
+        ],
+        "pid": 1300,
+        "exit_code": 0,
+        "finished_utc": "2026-10-27T09:29:49.530954+00:00"
+      }
+    ]
+  },
+  "additional_checks": {
+    "go_rust_process_integration": "go test -race -tags=integration ./internal/sidecar -count=1; final release binary selected explicitly; passed",
+    "python_diagnostics": "3 tests passed",
+    "tls12_real_sidecar": "cargo test --locked --release -p tokenhive-sidecar attached_channels_run_real_selective_mpc_tls_request -- --ignored --nocapture; passed"
+  }
+}

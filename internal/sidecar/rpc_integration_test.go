@@ -22,24 +22,31 @@ func TestGoClientTalksToRustSidecarProcess(t *testing.T) {
 	}
 	repositoryRoot := filepath.Clean(filepath.Join("..", ".."))
 	rustRoot := filepath.Join(repositoryRoot, "rust")
-	build := exec.Command("cargo", "build", "-p", "tokenhive-sidecar")
-	build.Dir = rustRoot
-	if output, err := build.CombinedOutput(); err != nil {
-		t.Fatalf("build Rust sidecar: %v\n%s", err, output)
+	// Allow the exact deployment artifact to be checked without rebuilding it
+	// under a different Cargo profile. The default still builds from the lockfile.
+	binary := os.Getenv("TOKENHIVE_TEST_SIDECAR_BINARY")
+	if binary == "" {
+		build := exec.Command("cargo", "build", "--locked", "-p", "tokenhive-sidecar")
+		build.Dir = rustRoot
+		if output, err := build.CombinedOutput(); err != nil {
+			t.Fatalf("build Rust sidecar: %v\n%s", err, output)
+		}
+		binary = filepath.Join(rustRoot, "target", "debug", "tokenhive-sidecar")
+	} else if !filepath.IsAbs(binary) {
+		t.Fatal("TOKENHIVE_TEST_SIDECAR_BINARY must be an absolute path")
 	}
 
 	for _, version := range []string{TLS12, TLS13} {
-		t.Run(version, func(t *testing.T) { testRustSidecarVersion(t, rustRoot, version) })
+		t.Run(version, func(t *testing.T) { testRustSidecarVersion(t, binary, version) })
 	}
 }
 
-func testRustSidecarVersion(t *testing.T, rustRoot, version string) {
+func testRustSidecarVersion(t *testing.T, binary, version string) {
 	socketDirectory := t.TempDir()
 	if err := os.Chmod(socketDirectory, 0o700); err != nil {
 		t.Fatal(err)
 	}
 	socket := filepath.Join(socketDirectory, "hub.sock")
-	binary := filepath.Join(rustRoot, "target", "debug", "tokenhive-sidecar")
 	args := []string{"--role", "hub", "--socket", socket}
 	// Omit the flag for the legacy case to verify the compatibility default.
 	if version != TLS12 {

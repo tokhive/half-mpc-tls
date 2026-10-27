@@ -18,7 +18,7 @@ make demo
 go run ./examples/go/chat /tmp/tokenhive-demo-.../client.json
 ```
 
-演示默认 4 KiB canonical HTTP 请求容量。容量包含 HTTP 头和凭证槽，不等于 JSON body 上限；演示的回答来自本地固定响应，实际加密与认证经过真实两方 MPC。
+TLS 1.2 演示默认 4 KiB canonical HTTP 请求容量；显式启用 TLS 1.3 时默认共享 5 MiB 档位。容量包含 HTTP 头和凭证槽，不等于 JSON body 上限；演示的回答来自本地固定响应，实际加密与认证经过真实两方 MPC。
 
 ## 引入你的 Go 项目
 
@@ -95,6 +95,7 @@ status, err := c.TaskByKey(ctx, "order_123_answer_v1")
 | state | 含义 | 业务处理 |
 | --- | --- | --- |
 | `pending` | 已预留，尚无已提交的最终账务结果 | 继续查询或人工对账，不换新 key 重发 |
+| `review_required` | 认证用量超过预留上限，证据已保存，预留资金继续保留 | 查看 `review_reason` 和用量，联系平台核对；不换新 key 重发 |
 | `settled` | 已结算，包括非计费的上游错误 | 读取 charge/refund、token 用量；不重复派发 |
 | `cancelled` | 任务失败，已退回预留 | 是否发起新业务操作由业务决定 |
 
@@ -102,7 +103,7 @@ status, err := c.TaskByKey(ctx, "order_123_answer_v1")
 
 `errors.As(err, &apiError)` 可提取 `*client.APIError` 的 `StatusCode`、`Code`、`TaskID`、`RetryAfter`。常见状态：400 参数错误，401 鉴权失败，402 余额不足，409 已接收/幂等冲突，413 请求过大，429 限流，502 上游验证失败，503 容量不可用，504 超时。已提交 SSE 头之后发生错误会终止流，不发送伪造的成功 `[DONE]`。
 
-崩溃后，已落盘回执会回放到帐本；只留下预留且没有完整回执的请求保持 `pending`，不能推断为未执行。升级前旧版本使用原始任务 ID，本版本使用账号作用域摘要；已有旧任务用原 TaskID 查询，升级窗口内不要将旧操作改用新的幂等映射重发。
+崩溃后，已落盘回执会回放到账本；没有完整回执的 pending 任务在启动恢复时取消并退款，不能据此推断上游未执行。超出预留用量的完整回执进入 `review_required`，不自动退款或分账。升级前旧版本使用原始任务 ID，本版本使用账号作用域摘要；已有旧任务用原 TaskID 查询，升级窗口内不要将旧操作改用新的幂等映射重发。
 
 ## 嵌入现有 Go 服务
 
@@ -146,7 +147,9 @@ bin/tokenhive-provider-agent /etc/tokenhive/provider.json
 
 `api_limits` 配置每账号 `requests_per_second`、`burst`、`max_concurrent`。`body_read_timeout_seconds` 单独限制上传耗时，不截断后续长 SSE。SDK、网关和反向代理超时应协调；代理需关闭 SSE 缓冲。
 
-小请求优先使用 baseline；大请求配置独立容量进程与 `hub_sidecar_sockets` / `sidecar_sockets`，两端和 route 必须完全匹配。六档可协商不代表六档均已完成部署容量验收。先测每档 warm 时间、RSS、实际 RTT，再调整 `target_ready`、`global_warm_concurrency`、`max_ready`、`max_leased` 和 `data_tunnels`；增加限流额度不能增加 MPC 预处理吞吐。
+TLS 1.2 小请求优先使用 baseline；大请求配置独立容量进程与 `hub_sidecar_sockets` / `sidecar_sockets`，两端和 route 必须完全匹配。六档可协商不代表六档均已完成部署容量验收。先测每档 warm 时间、RSS、实际 RTT，再调整 `target_ready`、`global_warm_concurrency`、`max_ready`、`max_leased` 和 `data_tunnels`；增加限流额度不能增加 MPC 预处理吞吐。
+
+TLS 1.3 新部署推荐一个共享 `5m` 档位，不按小请求/大请求另开池。sidecar 仅指定 `--tls-version 1.3` 时采用该默认值；Go route 使用 [TLS 1.3 示例](../config/hub-tls13.example.json) 中匹配的 capacity。显式 `--capacity` 仍可保留旧档位，不自动改变现有 route 的资源上限。
 
 ## 会话排队与过载处理
 
@@ -194,6 +197,10 @@ python3 scripts/demo.py --tls-version 1.3
 ## 中断、重启与账本恢复
 
 Hub 启动时，先重放已经落盘的认证回执，再将剩余 pending 任务取消并退回预留余额，最后开放 API。取消事件也写入持久账本；重复重启不会重复退款，原幂等键继续绑定原任务，不自动重发请求。
+
+完整回执的用量超过预留上限时，账本写入 `review` 事件，将任务置为 `review_required`，保留原预留资金且不扣款、退款或发放收益。任务查询返回 `review_reason: "usage_exceeds_reservation"` 和认证用量；普通取消或另一份回执不能覆盖该证据。重启回放会确认这一状态并继续处理其他任务，不将其当作无回执中断任务退款。在线请求仍以结算失败结束，不返回成功 JSON 或 SSE DONE。目前没有自动调账或人工调账接口，待核对资金需后续明确对账政策后处理；该状态本身不表示已经结算。存储错误、缺少预留和绑定冲突仍阻止恢复。
+
+新版本可读取已有账本；写入 `review` 事件后，旧版程序无法识别该事件，回滚需使用兼容此事件的版本，不能直接修改或删除哈希链中的记录。
 
 **重启后取消不等于上游未执行。** 上游可能已经收到请求甚至产生费用，但 Hub 中断前没有留下可验证回执。本系统不会凭不完整响应扣费或发放 Provider 收益。业务遇到结果不明确的断连，应先查原任务；不能仅凭 cancelled 状态就自动换幂等键重试。明确的 `queue_full` / `queue_timeout` 则发生在上游发送之前。
 

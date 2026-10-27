@@ -187,6 +187,27 @@ func (d *DurableLedger) Cancel(taskID, reasonCode string) (Cancellation, bool, e
 	return result, true, nil
 }
 
+// HoldForReview durably records exceptional evidence before startup may continue.
+// The reserve stays held across restarts and is excluded from CancelPending.
+func (d *DurableLedger) HoldForReview(receipt gateway.Receipt) (bool, error) {
+	if d == nil {
+		return false, ErrDurableLedgerClosed
+	}
+	d.mu.Lock()
+	defer d.mu.Unlock()
+	if err := d.available(); err != nil {
+		return false, err
+	}
+	created, err := d.ledger.HoldForReview(receipt)
+	if err != nil || !created {
+		return created, err
+	}
+	if err := d.append("review", receipt); err != nil {
+		return false, err
+	}
+	return true, nil
+}
+
 // CancelPending refunds reservations left by an interrupted Hub. Call only at
 // startup, after replaying every durable receipt and before admitting requests.
 // The exclusive ledger file lock excludes a still-running previous Hub. Missing
@@ -388,6 +409,15 @@ func (d *DurableLedger) replay(event ledgerEvent) error {
 		}
 		_, applied, err := d.ledger.Cancel(value.TaskID, value.ReasonCode)
 		if err != nil || !applied {
+			return ErrDurableLedgerCorrupt
+		}
+	case "review":
+		var value gateway.Receipt
+		if err := decodeStrict(event.Payload, &value); err != nil {
+			return err
+		}
+		created, err := d.ledger.HoldForReview(value)
+		if err != nil || !created {
 			return ErrDurableLedgerCorrupt
 		}
 	default:

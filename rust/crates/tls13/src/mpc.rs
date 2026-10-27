@@ -98,8 +98,10 @@ pub struct Party {
 }
 impl Party {
     pub async fn new(provider: bool, ctx: Context) -> Result<Self> {
+        let _phase = crate::diagnostics::Phase::new(provider, "tls13_key_exchange_setup");
         let mut party = Self::build(provider, ctx)?;
         party.ke.setup(&mut party.ctx).await?;
+        _phase.finish();
         Ok(party)
     }
     fn build(provider: bool, ctx: Context) -> Result<Self> {
@@ -184,16 +186,20 @@ impl Party {
         }
     }
     pub async fn exchange(&mut self, server: &[u8]) -> Result<()> {
+        let phase = crate::diagnostics::Phase::new(self.provider, "tls13_ecdhe_shares");
         self.ke
             .set_server_key(p256::PublicKey::from_sec1_bytes(server)?)?;
         self.ke.compute_shares(&mut self.ctx).await?;
         self.ke.assign(self.vm.vm())?;
+        phase.finish();
         self.execute().await?;
         self.ke.finalize().await?;
         Ok(())
     }
     pub async fn execute(&mut self) -> Result<()> {
+        let _phase = crate::diagnostics::Phase::new(self.provider, "tls13_vm_execute");
         self.vm.vm().execute_all(&mut self.ctx).await?;
+        _phase.finish();
         Ok(())
     }
     pub async fn reveal(&mut self, value: Secret) -> Result<Option<[u8; 32]>> {

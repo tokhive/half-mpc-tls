@@ -8,6 +8,7 @@
 //! MAC authentication and fresh Hub-private masks to keep secrets Hub-only.
 #![forbid(unsafe_code)]
 
+pub mod diagnostics;
 mod engine;
 mod mpc;
 mod record;

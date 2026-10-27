@@ -18,6 +18,7 @@ const (
 	ModeTLS13SelectiveMPC         = "tls13-selective-mpc"
 	FeatureTLS13KeyUpdate         = "tls13-keyupdate"
 	FeatureAuthenticatedMPCOutput = "authenticated-mpc-output"
+	FeatureTLS13KeyedHMACState    = "tls13-keyed-hmac-state"
 
 	FeatureServerKeyRelease         = "server-key-release"
 	FeatureSelectiveRequest         = "selective-request-encryption"
@@ -164,7 +165,7 @@ func engineRequirements(mode string) (string, []string, []string, error) {
 	case ModeTLS12SelectiveMPC:
 		return TLS12, SupportedCipherSuites, append(features, FeaturePublicRequestBody, FeaturePrecomputedClientAES), nil
 	case ModeTLS13SelectiveMPC:
-		return TLS13, []string{"TLS_AES_128_GCM_SHA256"}, append(features, FeatureTLS13KeyUpdate, FeatureAuthenticatedMPCOutput), nil
+		return TLS13, []string{"TLS_AES_128_GCM_SHA256"}, append(features, FeatureTLS13KeyUpdate, FeatureAuthenticatedMPCOutput, FeatureTLS13KeyedHMACState), nil
 	default:
 		return "", nil, nil, errors.New("unsupported sidecar engine mode")
 	}

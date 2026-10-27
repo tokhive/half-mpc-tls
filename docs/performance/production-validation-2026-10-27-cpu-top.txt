@@ -1,0 +1,147 @@
+File: tokenhive-profile-hub
+Type: cpu
+Time: 2026-10-27 17:13:40 CST
+Duration: 61.49s, Total samples = 81.77s (132.99%)
+Showing nodes accounting for 76.50s, 93.56% of 81.77s total
+Dropped 568 nodes (cum <= 0.41s)
+      flat  flat%   sum%        cum   cum%
+    25.27s 30.90% 30.90%     25.27s 30.90%  syscall.rawsyscalln
+    13.85s 16.94% 47.84%     13.85s 16.94%  runtime.kevent
+    12.78s 15.63% 63.47%     12.78s 15.63%  runtime.pthread_cond_wait
+     5.95s  7.28% 70.75%      5.96s  7.29%  runtime.pthread_cond_signal
+     2.91s  3.56% 74.31%      2.91s  3.56%  runtime.madvise
+     2.73s  3.34% 77.64%      2.73s  3.34%  crypto/internal/fips140/sha256.blockSHA2
+     2.54s  3.11% 80.75%      2.54s  3.11%  runtime.usleep
+     2.47s  3.02% 83.77%      2.47s  3.02%  runtime.pthread_kill
+     1.46s  1.79% 85.56%      1.73s  2.12%  runtime.tryDeferToSpanScan
+     0.84s  1.03% 86.58%         2s  2.45%  runtime.scanObjectsSmall
+     0.81s  0.99% 87.57%      0.81s  0.99%  runtime.pthread_cond_timedwait_relative_np
+     0.77s  0.94% 88.52%      0.82s  1.00%  runtime.typePointers.next
+     0.69s  0.84% 89.36%      2.32s  2.84%  runtime.scanObject
+     0.60s  0.73% 90.09%      1.09s  1.33%  runtime.scanblock
+     0.58s  0.71% 90.80%      0.58s  0.71%  crypto/internal/fips140/aes/gcm.gcmAesEnc
+     0.48s  0.59% 91.39%      0.48s  0.59%  runtime.memmove
+     0.25s  0.31% 91.70%      0.54s  0.66%  runtime.pcvalue
+     0.21s  0.26% 91.95%      0.75s  0.92%  runtime.stealWork
+     0.17s  0.21% 92.16%      0.46s  0.56%  runtime.(*sweepLocked).sweep
+     0.17s  0.21% 92.37%     12.27s 15.01%  runtime.gcDrain
+     0.12s  0.15% 92.52%      0.44s  0.54%  runtime.(*unwinder).resolveInternal
+     0.07s 0.086% 92.60%      0.48s  0.59%  crypto/internal/fips140/bigmod.(*Nat).montgomeryMul
+     0.06s 0.073% 92.67%      2.10s  2.57%  runtime.lock2
+     0.06s 0.073% 92.75%      3.06s  3.74%  runtime.markroot
+     0.06s 0.073% 92.82%      1.24s  1.52%  runtime.scanframeworker
+     0.05s 0.061% 92.88%     13.75s 16.82%  runtime.netpoll
+     0.04s 0.049% 92.93%      2.53s  3.09%  runtime.markroot.func1
+     0.04s 0.049% 92.98%      0.58s  0.71%  runtime.suspendG
+     0.03s 0.037% 93.02%     29.93s 36.60%  runtime.findRunnable
+     0.03s 0.037% 93.05%      0.42s  0.51%  runtime.getempty
+     0.02s 0.024% 93.08%      2.81s  3.44%  crypto/tls.(*Conn).Read
+     0.02s 0.024% 93.10%     10.76s 13.16%  internal/poll.(*FD).Read
+     0.02s 0.024% 93.13%      3.01s  3.68%  runtime.(*gcControllerState).enlistWorker
+     0.02s 0.024% 93.15%      2.88s  3.52%  runtime.(*mheap).allocSpan
+     0.02s 0.024% 93.18%      0.45s  0.55%  runtime.(*unwinder).next
+     0.02s 0.024% 93.20%      0.44s  0.54%  runtime.runqgrab
+     0.02s 0.024% 93.22%      1.90s  2.32%  runtime.scanstack
+     0.02s 0.024% 93.25%      0.63s  0.77%  runtime.sweepone
+     0.02s 0.024% 93.27%     10.71s 13.10%  syscall.read
+     0.02s 0.024% 93.30%     14.46s 17.68%  syscall.write
+     0.01s 0.012% 93.31%      0.60s  0.73%  crypto/internal/fips140/aes/gcm.(*GCM).sealAfterIndicator
+     0.01s 0.012% 93.32%      0.61s  0.75%  crypto/internal/fips140/aes/gcm.(*GCMWithXORCounterNonce).Seal
+     0.01s 0.012% 93.33%      2.75s  3.36%  crypto/internal/fips140/sha256.(*Digest).Write
+     0.01s 0.012% 93.35%     14.62s 17.88%  crypto/tls.(*Conn).Write
+     0.01s 0.012% 93.36%      0.71s  0.87%  crypto/tls.(*Conn).handshakeContext
+     0.01s 0.012% 93.37%      2.78s  3.40%  crypto/tls.(*Conn).readRecordOrCCS
+     0.01s 0.012% 93.38%     13.80s 16.88%  crypto/tls.(*Conn).write
+     0.01s 0.012% 93.40%      0.74s   0.9%  crypto/tls.(*halfConn).encrypt
+     0.01s 0.012% 93.41%     14.48s 17.71%  internal/poll.(*FD).Write
+     0.01s 0.012% 93.42%     26.65s 32.59%  io.copyBuffer
+     0.01s 0.012% 93.43%      0.65s  0.79%  runtime.bgsweep
+     0.01s 0.012% 93.45%      7.45s  9.11%  runtime.gcBgMarkWorker
+     0.01s 0.012% 93.46%      0.55s  0.67%  runtime.makeslice
+     0.01s 0.012% 93.47%     31.25s 38.22%  runtime.mcall
+     0.01s 0.012% 93.48%      0.77s  0.94%  runtime.newstack
+     0.01s 0.012% 93.49%     12.66s 15.48%  runtime.notesleep
+     0.01s 0.012% 93.51%      2.19s  2.68%  runtime.preemptone
+     0.01s 0.012% 93.52%      1.31s  1.60%  runtime.resetspinning
+     0.01s 0.012% 93.53%     18.32s 22.40%  tokenhive.local/half-mpc-tls/internal/protocol.writeAll
+     0.01s 0.012% 93.54%      8.14s  9.95%  tokenhive.local/half-mpc-tls/internal/sidecar.(*Attachment).Read
+     0.01s 0.012% 93.56%     17.80s 21.77%  tokenhive.local/half-mpc-tls/internal/tunnel.(*remoteConn).Write
+         0     0% 93.56%      0.50s  0.61%  _.goready.func1
+         0     0% 93.56%      0.48s  0.59%  crypto.SignMessage
+         0     0% 93.56%      0.58s  0.71%  crypto/internal/fips140/aes/gcm.seal
+         0     0% 93.56%      0.45s  0.55%  crypto/internal/fips140/bigmod.(*Nat).Exp
+         0     0% 93.56%      0.48s  0.59%  crypto/internal/fips140/rsa.SignPSS
+         0     0% 93.56%      0.47s  0.57%  crypto/internal/fips140/rsa.decrypt
+         0     0% 93.56%      2.73s  3.34%  crypto/internal/fips140/sha256.block
+         0     0% 93.56%      0.48s  0.59%  crypto/rsa.(*PrivateKey).Sign
+         0     0% 93.56%      0.48s  0.59%  crypto/rsa.SignPSS
+         0     0% 93.56%      0.71s  0.87%  crypto/tls.(*Conn).HandshakeContext (inline)
+         0     0% 93.56%      2.76s  3.38%  crypto/tls.(*Conn).readFromUntil
+         0     0% 93.56%      2.78s  3.40%  crypto/tls.(*Conn).readRecord (inline)
+         0     0% 93.56%      0.70s  0.86%  crypto/tls.(*Conn).serverHandshake
+         0     0% 93.56%     14.60s 17.85%  crypto/tls.(*Conn).writeRecordLocked
+         0     0% 93.56%      0.69s  0.84%  crypto/tls.(*serverHandshakeStateTLS13).handshake
+         0     0% 93.56%      0.48s  0.59%  crypto/tls.(*serverHandshakeStateTLS13).sendServerCertificate
+         0     0% 93.56%      0.61s  0.75%  crypto/tls.(*xorNonceAEAD).Seal
+         0     0% 93.56%     25.17s 30.78%  internal/poll.ignoringEINTRIO (inline)
+         0     0% 93.56%     26.65s 32.59%  io.CopyBuffer
+         0     0% 93.56%     10.82s 13.23%  io.ReadAtLeast
+         0     0% 93.56%     10.82s 13.23%  io.ReadFull (inline)
+         0     0% 93.56%     10.76s 13.16%  net.(*conn).Read
+         0     0% 93.56%     14.34s 17.54%  net.(*conn).Write
+         0     0% 93.56%     10.76s 13.16%  net.(*netFD).Read
+         0     0% 93.56%     14.34s 17.54%  net.(*netFD).Write
+         0     0% 93.56%      0.69s  0.84%  net/http.(*conn).serve
+         0     0% 93.56%      0.66s  0.81%  net/http.serverHandler.ServeHTTP
+         0     0% 93.56%      2.62s  3.20%  runtime.(*mheap).alloc.func1
+         0     0% 93.56%      0.86s  1.05%  runtime.forEachP.func1
+         0     0% 93.56%      0.86s  1.05%  runtime.forEachPInternal
+         0     0% 93.56%     12.29s 15.03%  runtime.gcBgMarkWorker.func2
+         0     0% 93.56%      9.37s 11.46%  runtime.gcDrainMarkWorkerDedicated (inline)
+         0     0% 93.56%      2.90s  3.55%  runtime.gcDrainMarkWorkerIdle (inline)
+         0     0% 93.56%      0.41s   0.5%  runtime.gcStart.func4
+         0     0% 93.56%      0.67s  0.82%  runtime.gopreempt_m (inline)
+         0     0% 93.56%      0.67s  0.82%  runtime.goschedImpl
+         0     0% 93.56%      2.54s  3.11%  runtime.injectglist
+         0     0% 93.56%      1.64s  2.01%  runtime.injectglist.func1
+         0     0% 93.56%      2.10s  2.57%  runtime.lock (partial-inline)
+         0     0% 93.56%      2.10s  2.57%  runtime.lockWithRank (inline)
+         0     0% 93.56%     12.66s 15.48%  runtime.mPark (inline)
+         0     0% 93.56%      0.70s  0.86%  runtime.mallocgc
+         0     0% 93.56%      0.44s  0.54%  runtime.markrootBlock
+         0     0% 93.56%      0.72s  0.88%  runtime.morestack
+         0     0% 93.56%      0.82s  1.00%  runtime.notetsleep
+         0     0% 93.56%      0.82s  1.00%  runtime.notetsleep_internal
+         0     0% 93.56%      6.01s  7.35%  runtime.notewakeup
+         0     0% 93.56%      2.12s  2.59%  runtime.osyield (inline)
+         0     0% 93.56%     30.98s 37.89%  runtime.park_m
+         0     0% 93.56%      1.25s  1.53%  runtime.pollWork
+         0     0% 93.56%      2.47s  3.02%  runtime.preemptM
+         0     0% 93.56%      0.50s  0.61%  runtime.ready
+         0     0% 93.56%      0.42s  0.51%  runtime.runSafePointFn
+         0     0% 93.56%      0.44s  0.54%  runtime.runqsteal
+         0     0% 93.56%      2.47s  3.02%  runtime.scanSpan
+         0     0% 93.56%     31.52s 38.55%  runtime.schedule
+         0     0% 93.56%     13.61s 16.64%  runtime.semasleep
+         0     0% 93.56%      6.20s  7.58%  runtime.semawakeup
+         0     0% 93.56%      2.47s  3.02%  runtime.signalM (inline)
+         0     0% 93.56%      0.62s  0.76%  runtime.startTheWorldWithSema
+         0     0% 93.56%      5.43s  6.64%  runtime.startm
+         0     0% 93.56%     12.55s 15.35%  runtime.stopm
+         0     0% 93.56%      2.57s  3.14%  runtime.sysUsed (inline)
+         0     0% 93.56%      2.57s  3.14%  runtime.sysUsedOS (inline)
+         0     0% 93.56%     18.32s 22.40%  runtime.systemstack
+         0     0% 93.56%      3.94s  4.82%  runtime.wakep
+         0     0% 93.56%     10.71s 13.10%  syscall.Read (inline)
+         0     0% 93.56%     14.46s 17.68%  syscall.Write (inline)
+         0     0% 93.56%     25.38s 31.04%  syscall.syscall
+         0     0% 93.56%     25.38s 31.04%  syscall.syscalln
+         0     0% 93.56%      0.71s  0.87%  tokenhive.local/half-mpc-tls/hub.serveData.func1
+         0     0% 93.56%      0.66s  0.81%  tokenhive.local/half-mpc-tls/internal/api.(*Handler).ServeHTTP
+         0     0% 93.56%      0.65s  0.79%  tokenhive.local/half-mpc-tls/internal/coordinator.(*Coordinator).Execute
+         0     0% 93.56%     26.65s 32.59%  tokenhive.local/half-mpc-tls/internal/precompute.relayMPC.func2
+         0     0% 93.56%     10.98s 13.43%  tokenhive.local/half-mpc-tls/internal/protocol.(*Codec).ReadFrame
+         0     0% 93.56%     18.66s 22.82%  tokenhive.local/half-mpc-tls/internal/protocol.(*Codec).WriteFrame
+         0     0% 93.56%     18.54s 22.67%  tokenhive.local/half-mpc-tls/internal/sidecar.(*Attachment).Write
+         0     0% 93.56%      8.09s  9.89%  tokenhive.local/half-mpc-tls/internal/sidecar.(*Attachment).readChunkLocked
+         0     0% 93.56%      2.89s  3.53%  tokenhive.local/half-mpc-tls/internal/tunnel.(*Client).readLoop

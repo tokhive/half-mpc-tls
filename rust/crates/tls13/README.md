@@ -1,6 +1,10 @@
 # TLS 1.3 选择性 MPC 引擎
 
-已接入共享 sidecar、Go 能力协商、路由和预热池。两端 sidecar 显式设置 `--tls-version 1.3`，Go route 设置 `tls_version: "1.3"`；省略时仍使用 TLS 1.2，版本不匹配立即拒绝，无自动降级。保留 Provider 实际写入 ACK、规范请求校验和结算绑定。Go SDK 调用方式不变，配置见 [业务接入指南](../../../../docs/business-integration-zh.md)。
+已接入共享 sidecar、Go 能力协商、路由和预热池。两端 sidecar 显式设置 `--tls-version 1.3`，Go route 设置 `tls_version: "1.3"`；省略时仍使用 TLS 1.2，版本不匹配立即拒绝，无自动降级。保留 Provider 实际写入 ACK、规范请求校验和结算绑定。Go SDK 调用方式不变，配置见 [业务接入指南](../../../docs/business-integration-zh.md)。
+
+TLS 1.3 新进程未指定 `--capacity` 时默认共享 `5m` 档位；Go route 必须匹配精确容量，参见 [示例配置](../../../config/hub-tls13.example.json)。所有较小请求可共用该池，凭证电路仍最多 1 KiB；显式旧 capacity 继续支持。TLS 1.2 默认 baseline 不变。
+
+密钥计划复用当前 VM、同一 HMAC key 的秘密前缀压缩状态，减少重复 HKDF 电路求值，不复用会话或 OT 随机材料。此执行计划使用 MPC schedule revision 2，并要求 `tls13-keyed-hmac-state` 能力；新旧 sidecar 必须在秘密输入之前拒绝混用，升级需排空后成对更新。外层 RPC 仍为 v1，详见 [ADR 0007](../../../docs/adr/0007-session-local-hmac-prefix-states.md)。
 
 ## 已实现的协议范围
 
@@ -55,17 +59,19 @@ cargo clippy --manifest-path rust/Cargo.toml -p tokenhive-tls13 --all-targets --
 
 参考：[RFC 8446](https://www.rfc-editor.org/rfc/rfc8446.html)、[RFC 8448](https://www.rfc-editor.org/rfc/rfc8448.html)。
 
-本次验证结果：13 项库测试、1 项输出认证测试以及 2 项真实互操作测试通过；Rust 工作区测试、Clippy（`-D warnings`）和格式检查通过。真实测试显式使用了 `--ignored`，不是仅完成编译。
+2026-10-27 验证结果：库测试、1 项输出认证测试以及 2 项真实互操作测试通过；Rust 工作区测试、Clippy（`-D warnings`）和格式检查通过。真实测试显式使用了 `--ignored`，不是仅完成编译。
 
-下面是同机 loopback、每档一次的样本；在线时间包含凭证 MPC、KeyUpdate、请求正文实际写入测试 TCP 流，不包含模型推理或首 token 等待，也不是跨机 RTT、P95/P99 或四进程业务基准。
+下面是 2026-10-27 Apple M3 Pro 同机 loopback、每档一次的最终构建样本；在线时间包含凭证 MPC、KeyUpdate、请求正文实际写入测试 TCP 流，不包含模型推理或首 token 等待，也不是跨机 RTT、P95/P99 或四进程业务基准。
 
 | 请求容量 | 预热 | 在线请求发送 |
 |---|---:|---:|
-| 4 KiB | 454 ms | 4.7 ms |
-| 16 KiB | 420 ms | 4.9 ms |
-| 64 KiB | 416 ms | 4.7 ms |
-| 256 KiB | 428 ms | 6.5 ms |
-| 1 MiB | 420 ms | 12.1 ms |
-| 5 MiB | 416 ms | 49.5 ms |
+| 4 KiB | 79.0 ms | 1.8 ms |
+| 16 KiB | 71.9 ms | 2.0 ms |
+| 64 KiB | 73.6 ms | 2.4 ms |
+| 256 KiB | 96.3 ms | 8.1 ms |
+| 1 MiB | 74.4 ms | 13.5 ms |
+| 5 MiB | 72.9 ms | 59.6 ms |
 
-四进程接入验收已通过 TLS 1.3 baseline 和 5 MiB 容量（5,241,856 字节 prompt），覆盖 JSON/SSE、Go SDK、投递 ACK、幂等与回执；默认 TLS 1.2 回归也通过。执行 `make smoke-tls13` 或 `make smoke-tls13-large` 可重现，详情见 [集成验收记录](../../../../docs/integration-validation.md)。上述性能表仍为独立引擎样本，不代表四进程延迟。
+四进程接入验收已通过显式 TLS 1.3 baseline 和共享 5 MiB 容量（5,241,856 字节 prompt），覆盖 JSON/SSE、Go SDK、投递 ACK、幂等与回执；默认 TLS 1.2 回归也通过。执行 `make smoke-tls13` 或 `make smoke-tls13-large` 可重现，详情见 [集成验收记录](../../../docs/integration-validation.md)。上述性能表仍为独立引擎样本，不代表四进程延迟。
+
+最新四进程 profile 对照、最终构建及未验证边界见 [2026-10-27 优化报告](../../../docs/performance/optimization-2026-10-27.md)。
