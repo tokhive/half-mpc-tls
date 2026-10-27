@@ -1,0 +1,27 @@
+{
+  "protocol_version": 1,
+  "role": "hub",
+  "engine_mode": "tls12-selective-mpc",
+  "tls_versions": [
+    "1.2"
+  ],
+  "cipher_suites": [
+    "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256",
+    "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256"
+  ],
+  "features": [
+    "server-key-release",
+    "selective-request-encryption",
+    "public-request-body-keystream",
+    "bidirectional-attachments",
+    "authenticated-response-channel",
+    "provider-delivery-ack",
+    "precomputed-client-aes"
+  ],
+  "mpc_capacity": {
+    "max_request_bytes": 4096,
+    "max_request_records": 4,
+    "max_response_bytes": 16777216,
+    "max_response_records_online": 6
+  }
+}

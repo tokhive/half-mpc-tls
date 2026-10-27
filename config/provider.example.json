@@ -1,0 +1,20 @@
+{
+  "provider_id": "provider-1",
+  "instance_id": "provider-1-agent-1",
+  "control_address": "hub.tokenhive.example:9443",
+  "data_address": "hub.tokenhive.example:9444",
+  "hub_server_name": "hub.tokenhive.example",
+  "ca_file": "/etc/tokenhive/tls/hub-ca.crt",
+  "certificate_file": "/etc/tokenhive/tls/provider.crt",
+  "private_key_file": "/etc/tokenhive/tls/provider.key",
+  "sidecar_socket": "/run/tokenhive/provider-sidecar.sock",
+  "allowed_hosts": [
+    "api.openai.com"
+  ],
+  "allowed_ports": [
+    443
+  ],
+  "drain_file": "/run/tokenhive/drain",
+  "heartbeat_seconds": 5,
+  "data_tunnels": 32
+}

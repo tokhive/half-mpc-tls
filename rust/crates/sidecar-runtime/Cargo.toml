@@ -1,0 +1,33 @@
+[package]
+name = "tokenhive-sidecar"
+description = "Role-bound TokenHive MPC-TLS sidecar service"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+aes-gcm.workspace = true
+futures.workspace = true
+rand.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+sha2.workspace = true
+thiserror.workspace = true
+tokio = { workspace = true, features = ["io-util", "macros", "net", "rt-multi-thread", "signal", "sync", "time"] }
+tokio-util = { workspace = true, features = ["compat"] }
+tokenhive-sidecar-protocol = { path = "../sidecar-protocol" }
+tokenhive-tls13 = { path = "../tls13" }
+tokenhive-key-release = { path = "../key-release" }
+tlsn = { workspace = true, features = ["mozilla-certs"] }
+tlsn-mpc-tls.workspace = true
+zeroize.workspace = true
+
+[dev-dependencies]
+tempfile = "3"
+tlsn-server-fixture = { workspace = true }
+tlsn-server-fixture-certs = { workspace = true }
+
+[[bin]]
+name = "tokenhive-sidecar"
+path = "src/main.rs"

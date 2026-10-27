@@ -1,0 +1,22 @@
+[package]
+name = "tokenhive-key-release"
+description = "One-way TLS 1.2 server traffic key release for TokenHive"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+mpz-core.workspace = true
+mpz-hash.workspace = true
+mpz-memory-core.workspace = true
+mpz-vm-core.workspace = true
+tlsn-mpc-tls.workspace = true
+tlsn-core.workspace = true
+thiserror.workspace = true
+zeroize.workspace = true
+
+[dev-dependencies]
+mpz-common = { workspace = true, features = ["test-utils"] }
+mpz-ideal-vm = { git = "https://github.com/privacy-ethereum/mpz", rev = "v0.1.0-alpha.6" }
+tokio = { version = "1.52", features = ["macros", "rt"] }

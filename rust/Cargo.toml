@@ -1,0 +1,117 @@
+[workspace]
+members = [
+    "crates/key-release",
+    "crates/tls13",
+    "crates/sidecar-protocol",
+    "crates/sidecar-runtime",
+    "vendor/mpz-common",
+    "vendor/tlsn",
+    "vendor/tlsn-deap",
+    "vendor/tlsn-mpc-tls",
+]
+resolver = "2"
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+license = "Apache-2.0"
+rust-version = "1.98"
+
+[workspace.lints.rust]
+unexpected_cfgs = { level = "warn", check-cfg = ["cfg(tlsn_insecure)"] }
+
+[workspace.lints.clippy]
+
+[workspace.dependencies]
+mpz-core = { git = "https://github.com/privacy-ethereum/mpz", rev = "v0.1.0-alpha.6" }
+mpz-common = { path = "vendor/mpz-common" }
+mpz-circuits = { git = "https://github.com/privacy-ethereum/mpz", rev = "v0.1.0-alpha.6" }
+mpz-fields = { git = "https://github.com/privacy-ethereum/mpz", rev = "v0.1.0-alpha.6" }
+mpz-garble = { path = "vendor/mpz-garble" }
+mpz-garble-core = { path = "vendor/mpz-garble-core" }
+mpz-hash = { git = "https://github.com/privacy-ethereum/mpz", rev = "v0.1.0-alpha.6", default-features = false, features = ["sha256"] }
+mpz-ideal-vm = { git = "https://github.com/privacy-ethereum/mpz", rev = "v0.1.0-alpha.6" }
+mpz-memory-core = { git = "https://github.com/privacy-ethereum/mpz", rev = "v0.1.0-alpha.6" }
+mpz-ole = { git = "https://github.com/privacy-ethereum/mpz", rev = "v0.1.0-alpha.6" }
+mpz-ot = { git = "https://github.com/privacy-ethereum/mpz", rev = "v0.1.0-alpha.6" }
+mpz-ot-core = { git = "https://github.com/privacy-ethereum/mpz", rev = "v0.1.0-alpha.6" }
+mpz-share-conversion = { git = "https://github.com/privacy-ethereum/mpz", rev = "v0.1.0-alpha.6" }
+mpz-vm-core = { git = "https://github.com/privacy-ethereum/mpz", rev = "v0.1.0-alpha.6" }
+mpz-zk = { git = "https://github.com/privacy-ethereum/mpz", rev = "v0.1.0-alpha.6" }
+tlsn-attestation = { git = "https://github.com/tlsnotary/tlsn", rev = "47aee45b53e06648c1b2ad3689b367b8c923fdec" }
+tlsn-cipher = { git = "https://github.com/tlsnotary/tlsn", rev = "47aee45b53e06648c1b2ad3689b367b8c923fdec" }
+tlsn-core = { git = "https://github.com/tlsnotary/tlsn", rev = "47aee45b53e06648c1b2ad3689b367b8c923fdec" }
+tlsn-deap = { path = "vendor/tlsn-deap" }
+tlsn-hmac-sha256 = { git = "https://github.com/tlsnotary/tlsn", rev = "47aee45b53e06648c1b2ad3689b367b8c923fdec" }
+tlsn-key-exchange = { git = "https://github.com/tlsnotary/tlsn", rev = "47aee45b53e06648c1b2ad3689b367b8c923fdec" }
+tlsn-mpc-tls = { path = "vendor/tlsn-mpc-tls" }
+tlsn-mux = { git = "https://github.com/tlsnotary/tlsn-utils", rev = "64722f7" }
+tlsn-server-fixture = { git = "https://github.com/tlsnotary/tlsn", rev = "47aee45b53e06648c1b2ad3689b367b8c923fdec" }
+tlsn-server-fixture-certs = { git = "https://github.com/tlsnotary/tlsn", rev = "47aee45b53e06648c1b2ad3689b367b8c923fdec" }
+tlsn-tls-client = { git = "https://github.com/tlsnotary/tlsn", rev = "47aee45b53e06648c1b2ad3689b367b8c923fdec" }
+tlsn-tls-core = { git = "https://github.com/tlsnotary/tlsn", rev = "47aee45b53e06648c1b2ad3689b367b8c923fdec" }
+tlsn = { path = "vendor/tlsn" }
+tls-server-fixture = { git = "https://github.com/tlsnotary/tlsn", rev = "47aee45b53e06648c1b2ad3689b367b8c923fdec" }
+aes = "0.8"
+aes-gcm = "0.9"
+async-trait = "0.1"
+async-task = "4"
+bitvec = "1.0"
+blake3 = "1.8.2"
+bytes = "1"
+cfg-if = "1"
+cipher = "0.5.0-rc.1"
+crossbeam-channel = "0.5"
+crossbeam-deque = "0.8"
+crossbeam-utils = "0.8"
+criterion = { version = "0.5", default-features = false }
+ctr = "0.9"
+derive_builder = "0.12"
+enum-try-as-inner = "0.1"
+futures = "0.3"
+futures-plex = { git = "https://github.com/tlsnotary/tlsn-utils", rev = "64722f7" }
+generic-array = "0.14"
+ghash = "0.5"
+http-body-util = "0.1"
+hyper = "1.1"
+hashbrown = "0.14.5"
+itybity = "0.3"
+once_cell = "1.19"
+opaque-debug = "0.3"
+p256 = "0.13"
+pin-project-lite = "0.2"
+pollster = "0.3"
+pretty_assertions = "1"
+rand = "0.9"
+rand_chacha = "0.9"
+rand_core = "0.9"
+rayon = "1"
+rstest = "0.17"
+rustls = { version = "0.23", default-features = false }
+rustls-pki-types = "1.12"
+rustls-webpki = "0.103"
+serio = "0.2"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+serde_arrays = "0.1"
+semver = "1.0"
+sha2 = "0.10"
+rangeset = "0.4"
+regex = "1"
+thiserror = "1.0"
+tokio = "1.52"
+tokio-util = "0.7"
+tracing = "0.1"
+tracing-subscriber = "0.3"
+web-time = "0.2"
+web-spawn = { git = "https://github.com/tlsnotary/tlsn-utils", rev = "64722f7" }
+webpki-roots = "1.0"
+zeroize = { version = "1.8", features = ["zeroize_derive"] }
+
+# tlsn-hmac-sha256 in TLSNotary alpha.15 uses mpz_hash::sha256 without
+# enabling the feature itself. Keeping this direct dependency makes feature
+# activation explicit instead of relying on unrelated workspace crates. The
+# Cargo.lock pins the tag to commit 6ebfe619490c3155a589fc6a3be83b0976de19dc.
+
+[patch."https://github.com/privacy-ethereum/mpz"]
+mpz-common = { path = "vendor/mpz-common" }

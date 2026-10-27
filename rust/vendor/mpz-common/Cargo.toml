@@ -1,0 +1,46 @@
+[package]
+name = "mpz-common"
+version = "0.1.0-alpha.6"
+edition = "2024"
+
+[features]
+default = []
+executor = []
+sync = ["tokio/sync"]
+future = []
+test-utils = ["tokio/io-util", "tokio-util/compat"]
+ideal = ["tokio/sync"]
+
+[dependencies]
+futures.workspace = true
+async-trait.workspace = true
+bytes = { workspace = true }
+pin-project-lite.workspace = true
+thiserror.workspace = true
+serio.workspace = true
+serde = { workspace = true, features = ["derive"] }
+pollster.workspace = true
+cfg-if.workspace = true
+tokio = { workspace = true, optional = true }
+tokio-util = { workspace = true }
+crossbeam-channel = { workspace = true }
+crossbeam-deque = { workspace = true }
+crossbeam-utils = { workspace = true }
+async-task = { workspace = true }
+
+[dev-dependencies]
+tokio = { workspace = true, features = [
+    "io-util",
+    "macros",
+    "rt-multi-thread",
+    "net",
+] }
+tokio-util = { workspace = true, features = ["compat"] }
+tracing-subscriber = { workspace = true, features = ["fmt"] }
+criterion = { workspace = true, features = ["async_tokio"] }
+rstest = { workspace = true }
+
+[[bench]]
+name = "io"
+path = "benches/io.rs"
+harness = false

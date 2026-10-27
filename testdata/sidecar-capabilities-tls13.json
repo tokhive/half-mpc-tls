@@ -1,0 +1,26 @@
+{
+  "protocol_version": 1,
+  "role": "hub",
+  "engine_mode": "tls13-selective-mpc",
+  "tls_versions": [
+    "1.3"
+  ],
+  "cipher_suites": [
+    "TLS_AES_128_GCM_SHA256"
+  ],
+  "features": [
+    "server-key-release",
+    "selective-request-encryption",
+    "bidirectional-attachments",
+    "authenticated-response-channel",
+    "provider-delivery-ack",
+    "tls13-keyupdate",
+    "authenticated-mpc-output"
+  ],
+  "mpc_capacity": {
+    "max_request_bytes": 4096,
+    "max_request_records": 4,
+    "max_response_bytes": 16777216,
+    "max_response_records_online": 6
+  }
+}

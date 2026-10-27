@@ -1,0 +1,45 @@
+[package]
+name = "tokenhive-tls13"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+aes-gcm.workspace = true
+futures.workspace = true
+ghash = "0.5"
+hmac = "0.12"
+mpz-circuits = { workspace = true, features = ["aes"] }
+mpz-common.workspace = true
+mpz-core.workspace = true
+mpz-garble.workspace = true
+mpz-garble-core.workspace = true
+mpz-hash.workspace = true
+mpz-memory-core.workspace = true
+mpz-ole.workspace = true
+mpz-ot.workspace = true
+mpz-share-conversion.workspace = true
+mpz-vm-core.workspace = true
+p256.workspace = true
+rand.workspace = true
+serde.workspace = true
+rustls-webpki = {workspace = true, features = ["ring"]}
+rustls-pki-types.workspace = true
+subtle = "2"
+serio.workspace = true
+sha2.workspace = true
+tlsn-core.workspace = true
+tlsn-key-exchange.workspace = true
+tlsn-mux.workspace = true
+tokio = { workspace = true, features = ["io-util", "macros", "net", "rt-multi-thread", "sync", "time"] }
+tokio-util = { workspace = true, features = ["compat"] }
+zeroize.workspace = true
+
+[dev-dependencies]
+mpz-ot-core.workspace = true
+serde_json.workspace = true
+mpz-common = {workspace = true, features = ["test-utils"]}
+mpz-ideal-vm.workspace = true
+rustls = { workspace = true, features = ["ring", "std"] }
+tlsn-server-fixture-certs.workspace = true

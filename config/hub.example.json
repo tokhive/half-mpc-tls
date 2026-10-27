@@ -1,0 +1,70 @@
+{
+  "api_address": "0.0.0.0:8443",
+  "control_address": "0.0.0.0:9443",
+  "data_address": "0.0.0.0:9444",
+  "trust_domain": "tokenhive.example",
+  "certificate_file": "/etc/tokenhive/tls/hub.crt",
+  "private_key_file": "/etc/tokenhive/tls/hub.key",
+  "provider_ca_file": "/etc/tokenhive/tls/provider-ca.crt",
+  "hub_sidecar_socket": "/run/tokenhive/hub-sidecar.sock",
+  "state_directory": "/var/lib/tokenhive",
+  "platform_account": "tokenhive",
+  "api_keys": {
+    "th_replace_with_at_least_128_bits": "consumer-1"
+  },
+  "routes": [
+    {
+      "provider_id": "provider-1",
+      "credential_id": "openai-main",
+      "credential_length": 164,
+      "host": "api.openai.com",
+      "port": 443,
+      "server_name": "api.openai.com",
+      "models": [
+        "gpt-5"
+      ],
+      "allowed_response_models": [
+        "gpt-5"
+      ],
+      "max_input_tokens": 2048,
+      "max_output_tokens": 1024,
+      "price": {
+        "id": "gpt-5-usd-v1",
+        "currency": "USD",
+        "consumer_input_micros_per_million": 2000000,
+        "consumer_output_micros_per_million": 6000000,
+        "provider_input_micros_per_million": 1500000,
+        "provider_output_micros_per_million": 4500000
+      },
+      "capacity": {
+        "max_request_bytes": 4096,
+        "max_request_records": 4,
+        "max_response_bytes": 16777216,
+        "max_response_records_online": 6
+      }
+    }
+  ],
+  "fundings": [
+    {
+      "transaction_id": "bootstrap-consumer-1",
+      "consumer_id": "consumer-1",
+      "currency": "USD",
+      "amount_micros": 1000000
+    }
+  ],
+  "target_ready": 1,
+  "max_waiters": 64,
+  "queue_wait_timeout_ms": 10000,
+  "request_timeout_seconds": 300,
+  "heartbeat_timeout_seconds": 15,
+  "warm_concurrency": 1,
+  "max_ready": 8,
+  "max_leased": 64,
+  "global_warm_concurrency": 2,
+  "api_limits": {
+    "requests_per_second": 2,
+    "burst": 10,
+    "max_concurrent": 4
+  },
+  "body_read_timeout_seconds": 30
+}
